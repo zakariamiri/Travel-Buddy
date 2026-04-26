@@ -52,7 +52,7 @@ export default function Signup() {
         // Wait a moment for session to be set in cookies
         await new Promise(resolve => setTimeout(resolve, 500));
         router.refresh();
-        router.push('/');
+        router.push('/dashboard');
       } else {
         setError('Signup failed. Please try again.');
       }
