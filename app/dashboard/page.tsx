@@ -99,8 +99,8 @@ export default function Dashboard() {
 
                     <Dialog>
                         <DialogTrigger className="mb-6 bg-[#9f411d] text-white hover:bg-[#8a3412] font-medium text-md rounded-xl px-7 py-2 flex items-center gap-2 shadow-xl">
-                          <i className="ri-add-line text-md"></i>
-                                New Trip
+                            <i className="ri-add-line text-md"></i>
+                            New Trip
                         </DialogTrigger>
 
                         <DialogContent className="rounded-2xl max-w-md">

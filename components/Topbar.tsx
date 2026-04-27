@@ -2,7 +2,28 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Bell } from "lucide-react";
 
+import { useEffect, useState } from "react";
+import { createClient } from "@/utils/supabase/client";
+
 export default function Topbar() {
+
+  const supabase = createClient();
+  const [name, setName] = useState("");
+
+  useEffect(() => {
+    const getUser = async () => {
+      const { data } = await supabase.auth.getUser();
+
+      const fullName =
+        data.user?.user_metadata?.full_name ||
+        data.user?.email?.split("@")[0];
+
+      setName(fullName || "User");
+    };
+
+    getUser(); 
+  }, []);
+
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
 
@@ -28,7 +49,7 @@ export default function Topbar() {
 
         {/* USER */}
         <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-700 font-medium">Zakaria</span>
+          <span className="text-sm text-gray-700 font-medium">{name}</span>
 
           <Avatar className="ring-2 ring-gray-100">
             <AvatarImage src="https://i.pravatar.cc/40" />
