@@ -1,27 +1,41 @@
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Bell } from "lucide-react";
-
+import md5 from "md5";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
 export default function Topbar() {
 
   const supabase = createClient();
+
   const [name, setName] = useState("");
+  const [avatar, setAvatar] = useState("");
 
   useEffect(() => {
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
+      const user = data.user;
 
+      
       const fullName =
-        data.user?.user_metadata?.full_name ||
-        data.user?.email?.split("@")[0];
+        user?.user_metadata?.full_name ||
+        user?.email?.split("@")[0];
 
       setName(fullName || "User");
+
+     
+      const email = user?.email || "";
+      const hash = md5(email.trim().toLowerCase());
+
+      const avatarUrl =
+        user?.user_metadata?.avatar_url ||
+        `https://www.gravatar.com/avatar/${hash}?d=identicon`;
+
+      setAvatar(avatarUrl);
     };
 
-    getUser(); 
+    getUser();
   }, []);
 
   return (
@@ -42,8 +56,6 @@ export default function Topbar() {
         {/* NOTIFICATION */}
         <div className="relative cursor-pointer">
           <Bell className="w-5 h-5 text-gray-600 hover:text-black transition" />
-
-          {/* red dot */}
           <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
         </div>
 
@@ -52,8 +64,10 @@ export default function Topbar() {
           <span className="text-sm text-gray-700 font-medium">{name}</span>
 
           <Avatar className="ring-2 ring-gray-100">
-            <AvatarImage src="https://i.pravatar.cc/40" />
-            <AvatarFallback>U</AvatarFallback>
+            <AvatarImage src={avatar} />
+            <AvatarFallback>
+              {name?.charAt(0).toUpperCase()}
+            </AvatarFallback>
           </Avatar>
         </div>
 
