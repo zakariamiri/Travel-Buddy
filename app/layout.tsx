@@ -39,6 +39,7 @@ export default function RootLayout({
         epilogue.variable,
         "font-sans"
       )}
+      
     >
       <head>
         {/* Remix Icon CDN */}
@@ -46,9 +47,10 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"
           rel="stylesheet"
         />
+        <link rel="icon" href="/logo.png" sizes="any" />
       </head>
 
-      <body className="min-h-full flex flex-col bg-[#FFDBCF]">
+      <body className="min-h-full flex flex-col">
         {children}
       </body>
     </html>
