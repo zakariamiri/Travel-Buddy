@@ -9,6 +9,8 @@ import { Button } from "@/components/ui/button";
 import { FcGoogle } from "react-icons/fc";
 import Image from "next/image";
 import { createClient } from '@/utils/supabase/client';
+import logo from '@/public/logoWhite.png';
+import greece from '@/public/greece2.jpg';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -95,7 +97,7 @@ export default function Signup() {
       {/* IMAGE */}
       <div className="relative h-64 sm:h-80 lg:h-full lg:block hidden">
         <Image
-          src="/signup_side_image.png"
+          src={greece}
           alt="Signup Illustration"
           fill
           className="object-cover"
@@ -111,9 +113,15 @@ export default function Signup() {
       </div>
 
       {/* FORM */}
-      <div className="bg-orange-50 flex flex-col items-center justify-center px-6 py-10 lg:px-12 gap-4">
-
-        <div className="text-center">
+      <div className="bg-white flex flex-col items-center justify-center px-6 py-10 lg:px-12 gap-4">
+        <div className="text-center flex flex-col items-center gap-3">
+            {/* LOGO */}
+                    <Image
+                      src={logo}
+                      alt="Travel Buddy Logo"
+                      className="object-contain w-15 h-15"
+                      priority
+                    />
           <h1 className="font-heading text-3xl sm:text-4xl font-bold">
             Create an Account
           </h1>
@@ -122,7 +130,7 @@ export default function Signup() {
           </p>
         </div>
 
-        <Card className="w-full max-w-md">
+        <Card className="w-full max-w-md shadow-xl">
           <CardContent>
             <form onSubmit={handleSignup}>
               <div className="flex flex-col gap-6">
@@ -135,6 +143,8 @@ export default function Signup() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
+                    className="p-5"
+
                   />
                 </div>
 
@@ -147,6 +157,8 @@ export default function Signup() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={loading}
+                    className="p-5"
+
                   />
                 </div>
 
@@ -159,6 +171,8 @@ export default function Signup() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     disabled={loading}
+                    className="p-5"
+
                   />
                 </div>
 
@@ -168,7 +182,7 @@ export default function Signup() {
           </CardContent>
 
           <CardFooter className="flex-col gap-3">
-            <Button className="w-full" onClick={handleSignup} disabled={loading}>
+            <Button className="w-full bg-[#9f411d] hover:bg-[#7f3417] text-white p-5" onClick={handleSignup} disabled={loading}>
               {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
 
@@ -182,7 +196,7 @@ export default function Signup() {
 
             <Button
               variant="outline"
-              className="w-full flex items-center justify-center gap-2"
+              className="w-full flex items-center justify-center gap-2 p-5"
               onClick={handleGoogleSignup}
               disabled={loading}
             >

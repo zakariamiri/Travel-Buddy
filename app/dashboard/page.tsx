@@ -122,7 +122,7 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex min-h-screen bg-[#FFEEE0]">
+    <div className="flex min-h-screen bg-[#fdf9f6]">
       <Sidebar />
 
       <div className="flex-1 flex flex-col">
@@ -296,10 +296,8 @@ export default function Dashboard() {
             </div>
           ) : trips.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-40 gap-2">
-              <p className="text-gray-400 text-lg">No trips yet !</p>
-              <p className="text-gray-300 text-sm">
-                Click "New Trip" to get started 🌍
-              </p>
+              <p className="text-gray-500 text-lg">No trips yet !</p>
+            
             </div>
           ) : (
             <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
