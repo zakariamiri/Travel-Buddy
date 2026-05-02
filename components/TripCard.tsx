@@ -108,8 +108,8 @@ export default function TripCard({
                     </AvatarFallback>
                   </Avatar>
                   {member.role === "owner" && (
-                    <span className="absolute -top-1 -right-1 text-[8px]">
-                      👑
+                    <span className="absolute -top-1 -right-1 text-yellow-400 text-xs">
+                      <i className="ri-vip-crown-fill"></i>
                     </span>
                   )}
                 </div>
@@ -122,7 +122,9 @@ export default function TripCard({
                     {name?.charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="absolute -top-1 -right-1 text-[8px]">👑</span>
+                <span className="absolute -top-1 -right-1 text-yellow-400 text-xs">
+                  <i className="ri-vip-crown-fill"></i>
+                </span>
               </div>
             )}
           </div>

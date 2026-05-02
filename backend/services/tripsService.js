@@ -54,6 +54,18 @@ async function getTripsByUser(userId, filter = "all") {
   return result;
 }
 
+async function getTripById(tripId) {
+  const { data: trip, error: tripErr } = await supabase
+    .from("trips")
+    .select("*")
+    .eq("id", tripId)
+    .single();
+
+  if (tripErr) throw new Error(tripErr.message);
+
+  return trip;
+}
+
 async function createTrip(
   userId,
   { name, destination, cover_url, start_date, end_date },
@@ -98,4 +110,4 @@ async function deleteTrip(userId, tripId) {
   return true;
 }
 
-module.exports = { getTripsByUser, createTrip, deleteTrip };
+module.exports = { getTripsByUser, createTrip, deleteTrip, getTripById };
