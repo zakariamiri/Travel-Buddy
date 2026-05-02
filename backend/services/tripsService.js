@@ -1,13 +1,20 @@
 const supabase = require("../supabaseClient");
+
 function computeStatus(start_date, end_date, is_confirmed) {
   if (!start_date) return "PLANNING";
+
   const today = new Date();
   today.setHours(0, 0, 0, 0);
+
+  const start = new Date(start_date);
   const end = end_date ? new Date(end_date) : new Date(start_date);
+
   if (end < today) return "PAST";
+  if (start <= today && end >= today) return "ONGOING";
   if (is_confirmed) return "CONFIRMED";
   return "PLANNING";
 }
+
 async function getTripsByUser(userId, filter = "all") {
   const { data: memberRows, error: memberErr } = await supabase
     .from("trip_members")
@@ -43,13 +50,22 @@ async function getTripsByUser(userId, filter = "all") {
   let result = trips.map((trip) => ({
     ...trip,
     status: computeStatus(trip.start_date, trip.end_date, trip.is_confirmed),
-    status: computeStatus(trip.start_date, trip.end_date, trip.is_confirmed),
     members: membersByTrip[trip.id] || [],
     role: memberRows.find((r) => r.trip_id === trip.id)?.role || "viewer",
   }));
 
-  if (filter === "upcoming") result = result.filter((t) => t.status !== "PAST");
-  if (filter === "past") result = result.filter((t) => t.status === "PAST");
+  if (filter === "upcoming") {
+    result = result.filter(
+      (t) =>
+        t.status === "CONFIRMED" ||
+        t.status === "PLANNING" ||
+        t.status === "ONGOING",
+    );
+  }
+
+  if (filter === "past") {
+    result = result.filter((t) => t.status === "PAST");
+  }
 
   return result;
 }
