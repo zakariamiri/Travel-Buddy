@@ -1,3 +1,4 @@
+
 import React from 'react'
 import { Card, CardContent } from './ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
@@ -5,9 +6,21 @@ import { FiMoreHorizontal } from "react-icons/fi"
 import { CiTrash, CiLocationOn } from "react-icons/ci"
 import { ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
+import { useDraggable } from '@dnd-kit/core';
 
-export default function ActivityCard({ activity }: { activity: any }) {
+export default function ActivityCard({ activity, onDelete }: { activity: any; onDelete: () => void }) {
   const scheduledTime = (activity.scheduled_time || '').slice(0, 5)
+
+  const {attributes, listeners, setNodeRef, transform} = useDraggable({
+    id: activity.id,
+    data: { activity }
+  });
+
+  const style = transform ? {
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
+  } : undefined;
+
+
 
   // Create a map of activity type values to icons for quick lookup
   const typeToIcon = ACTIVITY_TYPES.reduce(
@@ -22,7 +35,7 @@ export default function ActivityCard({ activity }: { activity: any }) {
   const Icon = typeToIcon[type] || FaCompass
 
   return (
-    <Card>
+    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='w-full cursor-move z-50'  >
       <CardContent>
         <div className='flex flex-row gap-4 items-start'>
           {/* Activity icon */}
@@ -45,7 +58,10 @@ export default function ActivityCard({ activity }: { activity: any }) {
               <FiMoreHorizontal />
             </DropdownMenuTrigger>
             <DropdownMenuContent>
-              <DropdownMenuItem className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'>
+              <DropdownMenuItem 
+                onClick={onDelete}
+                className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'
+              >
                 <CiTrash className='mr-2' />
                 Delete
               </DropdownMenuItem>

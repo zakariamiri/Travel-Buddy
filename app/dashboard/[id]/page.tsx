@@ -10,8 +10,12 @@ import { useParams } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import Trip from '@/types/types';
 import { SidebarProvider } from "@/components/ui/sidebar"
-
-
+import { toast } from "sonner"
+import { DndContext, DragEndEvent, useSensor,
+  useSensors,
+  PointerSensor,
+  TouchSensor, } from '@dnd-kit/core';
+import DayColumn from '@/components/DayColumn';
 
 
 export default function ActivitiesPage() {
@@ -21,8 +25,15 @@ export default function ActivitiesPage() {
     const [currentToken, setCurrentToken] = useState<string | null>(null);
     const [activities, setActivities] = useState<any[]>([]);
     const [loadingActivities, setLoadingActivities] = useState(false);
-
-    console.log("Trip ID:", id);
+const sensors = useSensors(
+  useSensor(PointerSensor),
+  useSensor(TouchSensor, {
+    activationConstraint: {
+      delay: 150,      
+      tolerance: 5,   
+    },
+  })
+);
 
     useEffect(() => {
         const getToken = async () => {
@@ -54,6 +65,25 @@ export default function ActivitiesPage() {
         }
     }, [id, currentToken]);
 
+    const handleDelete = async (activityId: string) => {
+        try {
+            setActivities(prev => prev.filter(activity => activity.id !== activityId))
+
+            const response = await fetch(`http://localhost:3001/api/trips/${id}/activities/${activityId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${currentToken}`
+                }
+            })
+            if (!response.ok) {
+                throw new Error('Failed to delete activity')
+            }
+            toast.success('Activity deleted successfully')
+        } catch (error) {
+            console.error('Error deleting activity:', error)
+            toast.error('Failed to delete activity')
+        }
+    }
     useEffect(() => {
         // Fetch activities for the trip
         const fetchActivities = async () => {
@@ -123,76 +153,116 @@ export default function ActivitiesPage() {
         }
     };
 
+    const handleDragEnd = async (event: DragEndEvent) => {
+        const { active, over } = event;
+        if (!over) return; // Dropped outside
+
+        const activityId = active.id as string;
+        const targetDate = over.id as string;
+        const draggedActivity = activities.find(a => a.id === activityId);
+
+        if (draggedActivity && draggedActivity.scheduled_date !== targetDate) {
+            // Optimistically update the UI
+            setActivities(prev => prev.map(a => 
+                a.id === activityId ? { ...a, scheduled_date: targetDate } : a
+            ));
+
+            try {
+                const response = await fetch(`http://localhost:3001/api/trips/${id}/activities/${activityId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${currentToken}`
+                    },
+                    body: JSON.stringify({ scheduled_date: targetDate })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to update activity date');
+                }
+                toast.success('Activity moved successfully');
+            } catch (error) {
+                console.error('Error updating activity date:', error);
+                toast.error('Failed to move activity');
+                // Revert fetch on failure
+                handleActivitySuccess();
+            }
+        }
+    };
+
     return (
         <SidebarProvider>
-        <div className='flex flex-1 overflow-hidden'>
-            <TripSidebar tripDetails={tripDetails} />
-            <div className='flex-1 flex flex-col overflow-hidden'>
-                <div className='sticky top-0 z-20 bg-background'>
-                    <Topbar />
-                </div>
-                <main className='flex-1 overflow-y-auto'>
-                    <div className='sticky top-0 z-10 p-5 '>
-                        <div className='flex justify-between items-center'>
-                            <h1 className='text-lg text-foreground'>Itinerary Timeline</h1>
-                            <div className='space-x-4 flex items-center'>
-                                <Button variant="outline" className='rounded-lg font-bold'><IoFilter />Filter</Button>
+            <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
 
-                            </div>
+                <div className='flex flex-1 overflow-hidden'>
+                    <TripSidebar tripDetails={tripDetails} />
+                    <div className='flex-1 flex flex-col overflow-hidden'>
+                        <div className='sticky top-0 z-20 bg-background'>
+                            <Topbar />
                         </div>
-                    </div>
-                    <div className='overflow-x-auto p-5'>
-                        <div className='flex flex-nowrap gap-4 pb-4'>
-                            {days > 0 ? (
-                                Array.from({ length: days }, (_, i) => {
-                                    const dayActivities = getActivitiesForDay(i);
-                                    const dayDate = new Date(tripDetails?.start_date || '');
-                                    dayDate.setDate(dayDate.getDate() + i);
-                                    const dayDateString = dayDate.toISOString().split('T')[0];
+                        <main className='flex-1 overflow-y-auto'>
+                            <div className='sticky top-0 z-10 p-5 '>
+                                <div className='flex justify-between items-center'>
+                                    <h1 className='text-lg text-foreground'>Itinerary Timeline</h1>
+                                    <div className='space-x-4 flex items-center'>
+                                        <Button variant="outline" className='rounded-lg font-bold'><IoFilter />Filter</Button>
 
-                                    return (
-                                        <div className='shrink-0 w-80 rounded-lg p-4' key={i}>
-                                            <h2 className='font-semibold mb-3 text-sm text-gray-700'>Day {i + 1}
-                                                <span className='mx-5'>
-                                                    {getDateFromIndex(tripDetails?.start_date || '', i).toLocaleString('en-US', { month: 'long', day: 'numeric' })}</span></h2>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className='overflow-x-auto p-5 touch-pan-x'>
+                                <div className='flex flex-nowrap gap-4 pb-4'>
+                                    {days > 0 ? (
+                                        Array.from({ length: days }, (_, i) => {
+                                            const dayActivities = getActivitiesForDay(i);
+                                            const dayDate = new Date(tripDetails?.start_date || '');
+                                            dayDate.setDate(dayDate.getDate() + i);
+                                            const dayDateString = dayDate.toISOString().split('T')[0];
 
-                                            {/* Display activities for this day */}
-                                            <div className='space-y-2 mb-3'>
-                                                {dayActivities.map
-                                                    ((activity) => (
-                                                        <ActivityCard key={activity.id} 
-                                                        activity={activity}
+                                            return (
+                                                <DayColumn 
+                                                    key={i} 
+                                                    id={dayDateString}
+                                                    title={`Day ${i + 1}`}
+                                                    subtitle={getDateFromIndex(tripDetails?.start_date || '', i).toLocaleString('en-US', { month: 'long', day: 'numeric' })}
+                                                    modalTrigger={
+                                                        <AddActivityModal
+                                                            tripId={id}
+                                                            tripStartDate={dayDateString}
+                                                            tripEndDate={tripDetails?.end_date}
+                                                            trigger={
+                                                                <button className='mt-3 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors'>
+                                                                    <span className='text-3xl font-bold'>+</span>
+                                                                    <span className='text-sm font-semibold'>Add Activity</span>
+                                                                </button>
+                                                            }
+                                                            onSuccess={handleActivitySuccess}
+                                                        />
+                                                    }
+                                                >
+                                                    {dayActivities.map((activity) => (
+                                                        <ActivityCard
+                                                            key={activity.id}
+                                                            activity={activity}
+                                                            onDelete={() => handleDelete(activity.id)}
                                                         />
                                                     ))}
-                                            </div>
-
-                                            {/* Add Activity Button for this day */}
-                                            <AddActivityModal
-                                                tripId={id}
-                                                tripStartDate={dayDateString}
-                                                tripEndDate={tripDetails?.end_date}
-                                                position={i + 1}
-                                                trigger={
-                                                    <button className='mt-3 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors'>
-                                                        <span className='text-3xl font-bold'>+</span>
-                                                        <span className='text-sm font-semibold'>Add Activity</span>
-                                                    </button>
-                                                }
-                                                onSuccess={handleActivitySuccess}
-                                            />
-                                        </div>
-                                    );
-                                })
-                            ) : (
-                                <p className='text-gray-500 mt-4'>No trip details available to calculate itinerary.</p>
-                            )
-                            }
-                        </div>
+                                                </DayColumn>
+                                            );
+                                        })
+                                    ) : (
+                                        <p className='text-gray-500 mt-4'>No trip details available to calculate itinerary.</p>
+                                    )
+                                    }
+                                </div>
+                            </div>
+                        </main>
                     </div>
-                </main>
-            </div>
-        </div>
-            </SidebarProvider>
+                </div>
+            </DndContext>
+
+        </SidebarProvider>
     )
 }
 

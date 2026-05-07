@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans, Epilogue } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner"
+
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -52,6 +54,7 @@ export default function RootLayout({
 
       <body className="min-h-full flex flex-col">
         {children}
+        <Toaster  position="bottom-right"  />
       </body>
     </html>
   );

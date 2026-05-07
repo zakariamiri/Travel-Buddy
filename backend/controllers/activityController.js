@@ -29,7 +29,6 @@ async function createActivity(req, res) {
             image_url,
             scheduled_time,
             scheduled_date,
-            position: position || 0,
             status: status || 'pending',
             lat,
             lon
@@ -40,7 +39,31 @@ async function createActivity(req, res) {
     }
 }
 
+async function updateActivity(req, res) {
+    try{
+
+        const {scheduled_time, scheduled_date } = req.body;
+        res.json(await activityService.updateActivity(req.params.activityId, {
+            scheduled_date
+        }));
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+        
+}
+
+async function deleteActivity(req, res) {
+    try {
+        const activity = await activityService.deleteActivity(req.params.activityId);
+        res.json(activity);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+}
+
 module.exports = {
     getActivitiesByTrip,
-    createActivity
+    createActivity,
+    deleteActivity,
+    updateActivity
 };

@@ -16,7 +16,6 @@ interface AddActivityModalProps {
   tripStartDate?: string
   tripEndDate?: string
   trigger?: React.ReactNode
-  position?: number
   onSuccess?: () => void
 }
 
@@ -25,7 +24,6 @@ export default function AddActivityModal({
   tripStartDate,
   tripEndDate,
   trigger,
-  position,
   onSuccess,
 }: AddActivityModalProps) {
   const [open, setOpen] = useState(false)
@@ -58,7 +56,6 @@ export default function AddActivityModal({
           tripEndDate={tripEndDate}
           onSuccess={handleSuccess}
           onCancel={() => setOpen(false)}
-          position={position}
         />
       </DialogContent>
     </Dialog>

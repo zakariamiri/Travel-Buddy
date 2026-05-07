@@ -14,6 +14,7 @@ import {
 import { createClient } from '@/utils/supabase/client'
 import { ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
+import { toast } from 'sonner'
 
 interface AddActivityFormProps {
   tripId: string | string[]
@@ -21,14 +22,12 @@ interface AddActivityFormProps {
   tripEndDate?: string
   onSuccess?: () => void
   onCancel?: () => void
-  position?: number
 }
 
 export default function AddActivityForm({
   tripId,
   tripStartDate,
   tripEndDate,
-  position,
   onSuccess,
   onCancel,
 }: AddActivityFormProps) {
@@ -125,7 +124,6 @@ export default function AddActivityForm({
         status: formData.status,
         lat: formData.lat ? parseFloat(formData.lat) : null,
         lon: formData.lon ? parseFloat(formData.lon) : null,
-        position: position || null,
       }
 
       const response = await fetch(
@@ -146,6 +144,7 @@ export default function AddActivityForm({
 
       const result = await response.json()
       console.log('Activity created:', result)
+      toast.success('Activity added successfully', { duration: 3000 })
 
       setFormData({
         type: 'activity',
@@ -164,6 +163,7 @@ export default function AddActivityForm({
     } catch (err) {
       console.error('Error creating activity:', err)
       setError(err instanceof Error ? err.message : 'An error occurred')
+            toast.error('Failed to add activity', { duration: 3000})
     } finally {
       setLoading(false)
     }
@@ -216,7 +216,7 @@ export default function AddActivityForm({
             value={formData.type}
             onValueChange={(value) => value && handleSelectChange('type', value)}
           >
-            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 rounded-lg h-10">
+            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-primary focus:border-primary rounded-lg h-10">
               <SelectValue>
                 <div className="flex items-center gap-2">
                   <SelectedIcon className="text-lg text-primary" />
@@ -236,10 +236,14 @@ export default function AddActivityForm({
                       <SelectItem
                         key={type.value}
                         value={type.value}
-                        className="flex items-center gap-2 pl-8 py-2 cursor-pointer hover:bg-blue-50"
+                        className="
+                        flex items-center gap-2 pl-8 py-2 cursor-pointer
+                        text-primary
+                        data-[highlighted]:bg-primary
+                      data-[highlighted]:text-white"
                       >
                         <div className="flex items-center gap-2 w-full">
-                          <IconComponent className="text-base text-primary flex-shrink-0" />
+                          <IconComponent className="text-base text-current flex-shrink-0" />
                           <span>{type.label}</span>
                         </div>
                       </SelectItem>
@@ -252,15 +256,15 @@ export default function AddActivityForm({
         </div>
 
         {/* Status */}
-        <div>
+        {/* <div>
           <Label htmlFor="status" className="block text-sm font-medium mb-2">
             Status
           </Label>
           <Select
-  value={formData.status}
-  onValueChange={(value) => value && handleSelectChange('status', value)}
->
-            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-blue-400 focus:border-blue-500 rounded-lg h-10">
+            value={formData.status}
+            onValueChange={(value) => value && handleSelectChange('status', value)}
+          >
+            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-primary focus:border-primary rounded-lg h-10">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -269,7 +273,7 @@ export default function AddActivityForm({
               <SelectItem value="rejected">Rejected</SelectItem>
             </SelectContent>
           </Select>
-        </div>
+        </div> */}
       </div>
 
       {/* Title */}
@@ -355,7 +359,7 @@ export default function AddActivityForm({
         <Button
           type="submit"
           disabled={loading}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg"
+          className="flex-1 bg-primary text-white font-semibold py-2 rounded-lg"
         >
           {loading ? 'Adding...' : 'Add Activity'}
         </Button>
