@@ -302,6 +302,7 @@ export default function Dashboard() {
           ) : (
             <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {trips.map((trip) => (
+              <a href={`/dashboard/${trip.id}`} key={trip.id} className="block">
                 <TripCard
                   key={trip.id}
                   title={trip.name}
@@ -316,6 +317,7 @@ export default function Dashboard() {
                   }
                   status={trip.status}
                 />
+              </a>
               ))}
             </div>
           )}

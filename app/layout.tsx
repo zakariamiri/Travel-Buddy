@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist_Mono, Plus_Jakarta_Sans, Epilogue } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { Toaster } from "@/components/ui/sonner"
+
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -39,6 +41,7 @@ export default function RootLayout({
         epilogue.variable,
         "font-sans"
       )}
+      
     >
       <head>
         {/* Remix Icon CDN */}
@@ -46,10 +49,12 @@ export default function RootLayout({
           href="https://cdn.jsdelivr.net/npm/remixicon@4.2.0/fonts/remixicon.css"
           rel="stylesheet"
         />
+        <link rel="icon" href="/logo.png" sizes="any" />
       </head>
 
-      <body className="min-h-full flex flex-col bg-[#FFDBCF]">
+      <body className="min-h-full flex flex-col">
         {children}
+        <Toaster  position="bottom-right"  />
       </body>
     </html>
   );

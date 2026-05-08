@@ -10,6 +10,19 @@ async function getTrips(req, res) {
     res.status(500).json({ error: err.message });
   }
 }
+
+async function getTripById(req, res) {
+  try {
+    const trip = await tripsService.getTripById(req.params.id);
+    if (!trip) {
+      return res.status(404).json({ error: "Trip not found" });
+    }
+    res.json(trip);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+}
+
 async function createTrip(req, res) {
   const { name, destination, cover_url, start_date, end_date } = req.body;
 
@@ -44,4 +57,4 @@ async function deleteTrip(req, res) {
   }
 }
 
-module.exports = { getTrips, createTrip, deleteTrip };
+module.exports = { getTrips, createTrip, deleteTrip, getTripById };
