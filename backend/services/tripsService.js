@@ -77,9 +77,13 @@ async function getTripById(tripId) {
     .eq("id", tripId)
     .single();
 
-  if (tripErr) throw new Error(tripErr.message);
+ const { count, error: countErr } = await supabase
+    .from("trip_members")
+    .select("*", { count: "exact", head: true })
+    .eq("trip_id", tripId);
+  if (countErr) throw new Error(countErr.message);
 
-  return trip;
+  return { ...trip, membersCount: count ?? 0 };
 }
 
 async function createTrip(

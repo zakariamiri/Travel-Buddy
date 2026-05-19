@@ -50,19 +50,21 @@ export default function Topbar() {
 
   return (
     <header className="h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
-      {/* SEARCH */}
-      <div className="relative w-1/2">
-        <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
-        <Input
-          placeholder="Search destinations..."
-          value={query}
-          onChange={(e) => handleSearch(e.target.value)}
-          className="pl-9 bg-gray-100 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
-        />
+      <div className="flex items-center gap-4 w-full md:w-1/2">
+        {/* SEARCH */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+          <Input
+            placeholder="Search destinations..."
+            value={query}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9 bg-gray-100 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+          />
+        </div>
       </div>
 
       {/* RIGHT SIDE */}
-      <div className="flex items-center gap-5">
+      <div className="flex items-center gap-5 ml-4">
         {/* NOTIFICATION */}
         <div className="relative cursor-pointer">
           <Bell className="w-5 h-5 text-gray-600 hover:text-black transition" />

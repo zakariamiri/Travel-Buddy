@@ -21,7 +21,6 @@ export default function ActivityCard({ activity, onDelete }: { activity: any; on
   } : undefined;
 
 
-
   // Create a map of activity type values to icons for quick lookup
   const typeToIcon = ACTIVITY_TYPES.reduce(
     (acc, type) => {
