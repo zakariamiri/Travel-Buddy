@@ -14,6 +14,7 @@ export default interface Trip {
     end_date: string;
     status: string;
     cover_url: string;
+    membersCount: number; 
 }
 
 export interface ActivityType {
@@ -83,3 +84,17 @@ export const ACTIVITY_TYPES: ActivityType[] = [
   { value: 'spa', label: 'Spa', icon: FaSpa, category: 'Wellness' },
   { value: 'yoga', label: 'Yoga', icon: FaYinYang, category: 'Wellness' },
 ]
+
+export interface Activity {
+    id: string;
+    title: string;
+    location: string;
+    type: string;
+    scheduled_date: string | null;
+    scheduled_time: string | null;
+    status: 'pending' | 'approved' | 'rejected';
+    image_url?: string | null;
+    voteCount?: number; // Total votes for this activity
+    currentUserVote?: number; // Current user's vote (1 for approve, -1 for reject, 0 for no vote)
+
+}

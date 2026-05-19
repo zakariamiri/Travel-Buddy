@@ -5,6 +5,7 @@ const activityController = require("../controllers/activityController");
 
 router.get("/", requireAuth, activityController.getActivitiesByTrip);
 router.post("/", requireAuth, activityController.createActivity);
+router.post("/:activityId/vote", requireAuth, activityController.voteActivity);
 router.delete("/:activityId", requireAuth, activityController.deleteActivity);
 router.put("/:activityId", requireAuth, activityController.updateActivity);
 

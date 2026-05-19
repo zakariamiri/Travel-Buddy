@@ -18,16 +18,17 @@ import {
     SidebarTrigger,
     useSidebar
 } from './ui/sidebar';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { TooltipProvider } from './ui/tooltip';
+import Link from 'next/link';
 
 export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null }) {
     const { state, toggleSidebar } = useSidebar();
     const isCollapsed = state === 'collapsed';
 
     const items = [
-        { name: "Timeline", icon: <MdOutlineTimeline /> },
-        { name: "Budget", icon: <RiMoneyDollarBoxLine /> },
-        { name: "Votes", icon: <MdHowToVote /> },
+        { name: "Timeline", icon: <MdOutlineTimeline />, link: `/dashboard/${tripDetails?.id}` },
+        { name: "Budget", icon: <RiMoneyDollarBoxLine />, link: `/dashboard/${tripDetails?.id}/budget` },
+        { name: "Votes", icon: <MdHowToVote />, link: `/dashboard/${tripDetails?.id}/votes` },
     ];
 
     if (!tripDetails) {
@@ -134,16 +135,12 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                         <ul className='space-y-1 w-full'>
                             {items.map((item) => (
                                 <li key={item.name} className='w-full'>
-                                    <Tooltip>
-                                        <TooltipTrigger className='w-full px-3'>
-                                            <div className={`flex items-center gap-3 py-2 rounded-lg hover:bg-[#9f411d] hover:text-white cursor-pointer transition-colors text-sm w-full
+                                    <Link   href={item.link} className={`flex items-center gap-3 py-2 rounded-lg hover:bg-[#9f411d] hover:text-white cursor-pointer transition-colors text-sm w-full
                                 ${isCollapsed ? 'justify-center px-2  text-primary' : 'px-4'}`}>
-                                                <span className='text-lg shrink-0'>{item.icon}</span>
-                                                {!isCollapsed && <span>{item.name}</span>}
-                                            </div>
-                                        </TooltipTrigger>
-
-                                    </Tooltip>
+                                        <span className='text-lg shrink-0'>{item.icon}</span>
+                                        {!isCollapsed && <span>{item.name}</span>}
+                                    </Link>
+                                   
                                 </li>
                             ))}
                         </ul>
