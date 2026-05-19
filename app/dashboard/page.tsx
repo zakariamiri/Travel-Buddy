@@ -17,6 +17,7 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { apiUrl } from "@/lib/api";
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -64,7 +65,7 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:3001/api/trips?filter=${currentFilter}`,
+        apiUrl(`/api/trips?filter=${currentFilter}`),
         { headers: { Authorization: `Bearer ${currentToken}` } },
       );
       const data = await res.json();
@@ -90,7 +91,7 @@ export default function Dashboard() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:3001/api/trips", {
+      const res = await fetch(apiUrl("/api/trips"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { apiUrl } from "@/lib/api";
 
 // Define the Stats type
 interface Stats {
   activeTrip: {
+    id: string;
     name: string;
     daysUntilStart: number;
     collaborators: number;
@@ -31,7 +34,7 @@ export default function StatsCards() {
       }
 
       try {
-        const res = await fetch("http://localhost:3001/api/stats", {
+        const res = await fetch(apiUrl("/api/stats"), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -77,9 +80,12 @@ export default function StatsCards() {
               {stats.activeTrip.daysUntilStart} days •{" "}
               {stats.activeTrip.collaborators} collaborators
             </p>
-            <button className="text-[#9f411d] text-sm font-semibold mt-3">
+            <Link
+              href={`/dashboard/${stats.activeTrip.id}`}
+              className="text-[#9f411d] text-sm font-semibold mt-3"
+            >
               Open Itinerary →
-            </button>
+            </Link>
           </>
         ) : (
           <>
@@ -94,15 +100,21 @@ export default function StatsCards() {
       </div>
 
       {/* Money */}
-      <div className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition">
+      <Link
+        href={stats?.activeTrip?.id ? `/dashboard/${stats.activeTrip.id}/budget` : "/dashboard"}
+        className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition"
+      >
         <i className="ri-hand-coin-fill text-3xl mb-2 text-[#977109]"></i>
         <h3 className="text-xl font-bold">
           {stats?.pendingSplit != null
             ? `$${Number(stats.pendingSplit).toLocaleString("en-US", { minimumFractionDigits: 0 })}`
-            : "—"}
+            : "-"}
         </h3>
         <p className="text-sm text-gray-600">Pending Split</p>
-      </div>
+        <span className="mt-2 text-xs font-semibold text-[#9f411d]">
+          Open budget →
+        </span>
+      </Link>
 
       {/* Countdown / Next Trip */}
       <div className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition">
@@ -110,7 +122,7 @@ export default function StatsCards() {
         <h3 className="text-xl font-bold">
           {stats?.daysUntilNextTrip != null
             ? `${stats.daysUntilNextTrip} days`
-            : "—"}
+            : "-"}
         </h3>
         <p className="text-sm text-gray-600">until your next trip</p>
       </div>

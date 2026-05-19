@@ -64,23 +64,37 @@ async function getActivitiesByTrip(tripId, userId) {
     }));
 }
 
-async function createActivity(tripId, { title, type, location, notes, image_url, scheduled_time, scheduled_date,  status = 'pending', lat, lon }) {
-    const { data: activity, error } = await supabase.from("trip_items")
-        .insert({
-            trip_id: tripId,
-            title,
-            type,
-            location,
-            notes,
-            image_url,
-            scheduled_time,
-            scheduled_date,
-            status,
-            lat,
-            lon
-        })
+async function createActivity(tripId, { title, type, location, notes, image_url, scheduled_time, scheduled_date,  status = 'pending', price_per_person, lat, lon }) {
+    const payload = {
+        trip_id: tripId,
+        title,
+        type,
+        location,
+        notes,
+        image_url,
+        scheduled_time,
+        scheduled_date,
+        status,
+        price_per_person,
+        lat,
+        lon
+    };
+
+    let { data: activity, error } = await supabase.from("trip_items")
+        .insert(payload)
         .select()
         .single();
+
+    if (error && error.code === "PGRST204" && error.message?.includes("price_per_person")) {
+        delete payload.price_per_person;
+        const retry = await supabase.from("trip_items")
+            .insert(payload)
+            .select()
+            .single();
+        activity = retry.data;
+        error = retry.error;
+    }
+
     if (error) {
         console.error("Error creating activity:", error);
         throw error;

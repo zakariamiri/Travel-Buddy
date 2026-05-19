@@ -11,7 +11,7 @@ async function getActivitiesByTrip(req, res) {
 }
 
 async function createActivity(req, res) {
-    const { title, type, location, notes, image_url, scheduled_time, scheduled_date, position, status, lat, lon } = req.body;
+    const { title, type, location, notes, image_url, scheduled_time, scheduled_date, position, status, price_per_person, lat, lon } = req.body;
 
     if (!title || !type) {
         return res.status(400).json({ error: "Title and type are required" });
@@ -31,6 +31,7 @@ async function createActivity(req, res) {
             scheduled_time,
             scheduled_date,
             status: status || 'pending',
+            price_per_person,
             lat,
             lon
         });

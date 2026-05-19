@@ -5,6 +5,7 @@ import Trip from '@/types/types';
 import { toast } from "sonner";
 import { useParams } from 'next/navigation';
 import { DragEndEvent } from '@dnd-kit/core';
+import { apiUrl } from '@/lib/api';
 
 interface TripContextType {
     tripDetails: Trip | null;
@@ -38,7 +39,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         const fetchTripDetails = async () => {
             try {
-                const res = await fetch(`http://localhost:3001/api/trips/${id}`,
+                const res = await fetch(apiUrl(`/api/trips/${id}`),
                     { headers: { Authorization: `Bearer ${currentToken}` } }
                 );
                 const trip = await res.json();
@@ -57,7 +58,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
         if (!id || !currentToken) return;
         setLoadingActivities(true);
         try {
-            const res = await fetch(`http://localhost:3001/api/trips/${id}/activities`,
+            const res = await fetch(apiUrl(`/api/trips/${id}/activities`),
                 { headers: { Authorization: `Bearer ${currentToken}` } }
             );
             const data = await res.json();
@@ -78,7 +79,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     const handleDelete = async (activityId: string) => {
         try {
             setActivities(prev => prev.filter(activity => activity.id !== activityId))
-            const response = await fetch(`http://localhost:3001/api/trips/${id}/activities/${activityId}`, {
+            const response = await fetch(apiUrl(`/api/trips/${id}/activities/${activityId}`), {
                 method: 'DELETE',
                 headers: {
                     'Authorization': `Bearer ${currentToken}`
@@ -110,7 +111,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
                 a.id === activityId ? { ...a, scheduled_date: targetDate } : a
             ));
             try {
-                const response = await fetch(`http://localhost:3001/api/trips/${id}/activities/${activityId}`, {
+                const response = await fetch(apiUrl(`/api/trips/${id}/activities/${activityId}`), {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json',

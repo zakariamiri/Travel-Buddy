@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { useTripContext } from './TripProvider'
 import { toast } from 'sonner'
 import { FaThumbsUp,FaThumbsDown  } from "react-icons/fa";
+import { apiUrl } from '@/lib/api'
 
 export default function ActivityVoteCard({ activity, tripId,membersCount }: { activity?: Activity | null; tripId: string; membersCount: number }) {
     const { currentToken } = useTripContext()
@@ -34,7 +35,7 @@ export default function ActivityVoteCard({ activity, tripId,membersCount }: { ac
         setUserVote(voteValue)
         
         try {
-            const res = await fetch(`http://localhost:3001/api/trips/${tripId}/activities/${activity.id}/vote`, {
+            const res = await fetch(apiUrl(`/api/trips/${tripId}/activities/${activity.id}/vote`), {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

@@ -3,10 +3,10 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Search, Bell } from "lucide-react";
 import md5 from "md5";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 
-export default function Topbar() {
+function TopbarContent() {
   const supabase = createClient();
 
   const [name, setName] = useState("");
@@ -82,5 +82,13 @@ export default function Topbar() {
         </div>
       </div>
     </header>
+  );
+}
+
+export default function Topbar() {
+  return (
+    <Suspense fallback={null}>
+      <TopbarContent />
+    </Suspense>
   );
 }

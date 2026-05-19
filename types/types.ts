@@ -15,6 +15,15 @@ export default interface Trip {
     status: string;
     cover_url: string;
     membersCount: number; 
+    budget_total?: number | null;
+    budget?: number | null;
+    members?: Array<{
+      id?: string;
+      full_name?: string | null;
+      email?: string | null;
+      avatar_url?: string | null;
+      role?: string;
+    }>;
 }
 
 export interface ActivityType {
@@ -90,6 +99,11 @@ export interface Activity {
     title: string;
     location: string;
     type: string;
+    notes?: string | null;
+    price_per_person?: number | string | null;
+    pricePerPerson?: number | string | null;
+    participant_count?: number | string | null;
+    participantCount?: number | string | null;
     scheduled_date: string | null;
     scheduled_time: string | null;
     status: 'pending' | 'approved' | 'rejected';

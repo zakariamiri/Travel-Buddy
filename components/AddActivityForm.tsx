@@ -15,6 +15,8 @@ import { createClient } from '@/utils/supabase/client'
 import { ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
 import { toast } from 'sonner'
+import { useTripContext } from './TripProvider'
+import { apiUrl } from '@/lib/api'
 
 interface AddActivityFormProps {
   tripId: string | string[]
@@ -31,9 +33,11 @@ export default function AddActivityForm({
   onSuccess,
   onCancel,
 }: AddActivityFormProps) {
+  const { tripDetails } = useTripContext()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentToken, setCurrentToken] = useState<string | null>(null)
+  const memberCount = Math.max(1, tripDetails?.membersCount ?? 1)
 
   const calculateDays = () => {
     if (!tripStartDate || !tripEndDate) return 0
@@ -60,9 +64,12 @@ export default function AddActivityForm({
     scheduled_date: getDayDate(1),
     scheduled_time: '',
     status: 'pending',
+    price_per_person: '',
     lat: '',
     lon: '',
   })
+
+  const estimatedTotal = (Number(formData.price_per_person) || 0) * memberCount
 
   React.useEffect(() => {
     const getToken = async () => {
@@ -122,12 +129,13 @@ export default function AddActivityForm({
         scheduled_date: formData.scheduled_date,
         scheduled_time: formData.scheduled_time || null,
         status: formData.status,
+        price_per_person: formData.price_per_person ? parseFloat(formData.price_per_person) : null,
         lat: formData.lat ? parseFloat(formData.lat) : null,
         lon: formData.lon ? parseFloat(formData.lon) : null,
       }
 
       const response = await fetch(
-        `http://localhost:3001/api/trips/${tripId}/activities`,
+        apiUrl(`/api/trips/${tripId}/activities`),
         {
           method: 'POST',
           headers: {
@@ -155,6 +163,7 @@ export default function AddActivityForm({
         scheduled_date: getDayDate(1),
         scheduled_time: '',
         status: 'pending',
+        price_per_person: '',
         lat: '',
         lon: '',
       })
@@ -320,6 +329,25 @@ export default function AddActivityForm({
             value={formData.scheduled_time}
             onChange={handleInputChange}
           />
+        </div>
+
+        <div>
+          <Label htmlFor="price_per_person" className="block text-sm font-medium mb-2">
+            Price/person
+          </Label>
+          <Input
+            type="number"
+            id="price_per_person"
+            name="price_per_person"
+            min="0"
+            value={formData.price_per_person}
+            onChange={handleInputChange}
+            placeholder="300 DH"
+          />
+          <div className="mt-2 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-800">
+            <span className="font-semibold">Total estimé:</span> {estimatedTotal.toLocaleString('fr-MA')} DH
+            <span className="text-sky-600"> ({memberCount} members)</span>
+          </div>
         </div>
       </div>
 

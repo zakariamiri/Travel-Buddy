@@ -107,7 +107,7 @@ export default function Signup() {
 
         <div className="absolute bottom-6 left-6 text-white max-w-sm">
           <p className="text-lg sm:text-2xl font-semibold leading-relaxed italic">
-            "The world is a book and those who do not travel read only one page."
+            &quot;The world is a book and those who do not travel read only one page.&quot;
           </p>
         </div>
       </div>

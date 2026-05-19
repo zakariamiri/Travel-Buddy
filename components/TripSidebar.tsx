@@ -114,15 +114,16 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                     <SidebarGroup className="px-3">
                         <div className='flex justify-between items-center mb-3'>
                             <p className='text-sm font-medium'>Members</p>
-                            <span className='text-primary hover:underline cursor-pointer font-bold text-sm'>+ Invite</span>
                         </div>
                         <div className='flex gap-2'>
-                            {[1, 2, 3, 4].map((index) => (
+                            {(tripDetails.members?.length ? tripDetails.members : [1, 2, 3, 4]).slice(0, 5).map((member, index) => (
                                 <Image
-                                    key={index}
+                                    key={typeof member === 'object' ? member.id || index : index}
                                     src={avatar}
-                                    alt={`Avatar ${index}`}
+                                    alt={typeof member === 'object' ? member.full_name || `Avatar ${index}` : `Avatar ${index}`}
                                     className="rounded-full object-cover w-9 h-9"
+                                    width={36}
+                                    height={36}
                                 />
                             ))}
                         </div>
