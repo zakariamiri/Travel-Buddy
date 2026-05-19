@@ -6,16 +6,20 @@ export default function DayColumn({ id, title, subtitle, children, modalTrigger 
         id: id,
     });
 
-    const style = {
-        backgroundColor: isOver ? '#f3f4f6' : undefined,
-    };
-
     return (
-        <div ref={setNodeRef} style={style} className='shrink-0 w-80 rounded-lg p-4 transition-colors '>
-            <h2 className='font-semibold mb-3 text-sm text-gray-700'>
-                {title}
-                <span className='mx-5'>{subtitle}</span>
-            </h2>
+        <div
+            ref={setNodeRef}
+            className={`min-h-[420px] w-80 shrink-0 rounded-lg border bg-white p-4 shadow-sm transition-colors ${isOver ? 'border-primary bg-sidebar/60' : 'border-border'}`}
+        >
+            <div className='mb-4 flex items-center justify-between gap-3 border-b pb-3'>
+                <div>
+                    <h2 className='text-base font-bold text-foreground'>{title}</h2>
+                    <p className='text-sm text-muted-foreground'>{subtitle}</p>
+                </div>
+                <span className='rounded-full bg-sidebar px-2.5 py-1 text-xs font-bold text-primary'>
+                    Drop
+                </span>
+            </div>
 
             {/* Display activities for this day */}
             <div className='space-y-2 mb-3'>

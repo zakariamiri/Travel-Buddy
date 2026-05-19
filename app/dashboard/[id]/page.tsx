@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import ActivityCard from '@/components/activityCard';
 import AddActivityModal from '@/components/AddActivityModal';
 import { IoFilter } from "react-icons/io5";
+import { CalendarDays, MapPinned, Plus, Route } from 'lucide-react';
 import { useParams } from 'next/navigation';
 import { DndContext, useSensor,
   useSensors,
@@ -57,17 +58,58 @@ export default function ActivitiesPage() {
 
     return (
         <DndContext onDragEnd={handleDragEnd} sensors={sensors}>
-            <main className='flex-1 overflow-y-auto'>
-                <div className='sticky top-0 z-10 p-5 '>
-                    <div className='flex justify-between items-center'>
-                        <h1 className='text-lg text-foreground'>Itinerary Timeline</h1>
-                        <div className='space-x-4 flex items-center'>
-                            <Button variant="outline" className='rounded-lg font-bold'><IoFilter />Filter</Button>
+            <main className='flex-1 overflow-y-auto bg-background'>
+                <div className="mx-auto flex w-full max-w-7xl flex-col gap-6 p-5 md:p-8">
+                    <header className="flex flex-col justify-between gap-4 border-b border-border/70 pb-5 md:flex-row md:items-end">
+                        <div>
+                            <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
+                                <Route className="size-3.5" />
+                                Trip Timeline
+                            </div>
+                            <h1 className='text-3xl font-bold tracking-normal text-foreground md:text-4xl'>Itinerary Timeline</h1>
+                            <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                                Organisez les activites approuvees par jour et ajustez le planning du voyage.
+                            </p>
                         </div>
-                    </div>
-                </div>
+                        <div className='flex items-center gap-3'>
+                            <div className="rounded-lg border bg-white px-4 py-3 text-sm shadow-sm">
+                                <span className="text-muted-foreground">Trip duration</span>
+                                <p className="font-semibold text-foreground">{days} days</p>
+                            </div>
+                            <Button variant="outline" className='rounded-lg border-[#ead9bf] bg-white font-bold text-[#9f411d] hover:bg-sidebar'>
+                                <IoFilter />
+                                Filter
+                            </Button>
+                        </div>
+                    </header>
+
+                    <section className="grid gap-4 md:grid-cols-3">
+                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                            <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                                <CalendarDays className="size-5" />
+                            </div>
+                            <p className="mt-5 text-sm font-medium text-muted-foreground">Trip days</p>
+                            <p className="mt-1 text-2xl font-bold text-foreground">{days}</p>
+                        </div>
+                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                            <div className="flex size-11 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
+                                <Route className="size-5" />
+                            </div>
+                            <p className="mt-5 text-sm font-medium text-muted-foreground">Approved activities</p>
+                            <p className="mt-1 text-2xl font-bold text-foreground">
+                                {activities.filter((activity) => activity.status === "approved").length}
+                            </p>
+                        </div>
+                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                            <div className="flex size-11 items-center justify-center rounded-lg bg-accent/20 text-[#9f411d]">
+                                <MapPinned className="size-5" />
+                            </div>
+                            <p className="mt-5 text-sm font-medium text-muted-foreground">Destination</p>
+                            <p className="mt-1 line-clamp-1 text-2xl font-bold text-foreground">{tripDetails?.destination || '-'}</p>
+                        </div>
+                    </section>
                 
-                <div className='overflow-x-auto p-5 touch-pan-x'>
+                    <div className='overflow-x-auto touch-pan-x'>
                     <div className='flex flex-nowrap gap-4 pb-4'>
                         {days > 0 ? (
                             Array.from({ length: days }, (_, i) => {
@@ -88,8 +130,8 @@ export default function ActivitiesPage() {
                                                 tripStartDate={dayDateString}
                                                 tripEndDate={tripDetails?.end_date}
                                                 trigger={
-                                                    <button className='mt-3 w-full h-32 border-2 border-dashed rounded-lg flex flex-col items-center justify-center gap-2 hover:bg-gray-50 transition-colors'>
-                                                        <span className='text-3xl font-bold'>+</span>
+                                                    <button className='mt-3 flex h-28 w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d8bda7] bg-[#fff8ec] text-[#9f411d] transition-colors hover:bg-sidebar'>
+                                                        <Plus className="size-6" />
                                                         <span className='text-sm font-semibold'>Add Activity</span>
                                                     </button>
                                                 }
@@ -111,6 +153,7 @@ export default function ActivitiesPage() {
                             <p className='text-gray-500 mt-4'>No trip details available to calculate itinerary.</p>
                         )
                         }
+                    </div>
                     </div>
                 </div>
             </main>

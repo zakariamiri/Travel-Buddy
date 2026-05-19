@@ -56,26 +56,33 @@ export default function ActivityVoteCard({ activity, tripId,membersCount }: { ac
 
     if (!activity) return null
 
+    const safeMembersCount = Math.max(1, membersCount)
+    const progressValue = Math.min(100, (votes / safeMembersCount) * 100)
+
     return (
-        <div className='bg-white rounded-lg shadow-md overflow-hidden relative border'>
-            <div>
-                 <div className='bg-primary-foreground opacity-90 text-primary font-bold p-1 rounded-sm absolute top-2 left-2 z-10' >Day 1</div>
-                {activity.image_url ? <img src={activity.image_url} alt={activity.title} className='w-full h-40 object-cover rounded-lg' /> : <Skeleton className='w-full h-40' />}
+        <div className='relative overflow-hidden rounded-lg border bg-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-md'>
+            <div className='relative'>
+                 <div className='absolute left-3 top-3 z-10 rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-primary shadow-sm'>
+                    {activity.status}
+                 </div>
+                {activity.image_url ? <img src={activity.image_url} alt={activity.title} className='h-44 w-full object-cover' /> : <Skeleton className='h-44 w-full' />}
             </div>
             <div className='p-5'>
-                <h2 className='text-xl font-bold'>{activity.title}</h2>
-                <p className='text-muted-foreground flex items-center gap-2 text-sm'><CiLocationOn /> {activity.location}</p>
+                <h2 className='line-clamp-1 text-xl font-bold text-foreground'>{activity.title}</h2>
+                <p className='mt-1 flex items-center gap-2 text-sm text-muted-foreground'><CiLocationOn /> {activity.location || 'No location'}</p>
 
-                <div className='my-4 gap-2'>
-                    {/* Assuming trip has 6 members total */}
-                    <p className='text-sm font-bold text-primary flex flex-col items-end'>{votes}/{membersCount} voted</p>
-                    <Progress value={(votes / membersCount) * 100} className='w-full h-2' />
+                <div className='my-4 rounded-lg bg-sidebar/50 p-3'>
+                    <div className='mb-2 flex items-center justify-between'>
+                        <p className='text-sm font-semibold text-foreground'>Voting progress</p>
+                        <p className='text-sm font-bold text-primary'>{votes}/{safeMembersCount}</p>
+                    </div>
+                    <Progress value={progressValue} className='w-full' />
                 </div>
                 
                 <div className="flex gap-3 mt-4">
                     <Button 
                         variant={userVote === 1 ? "success" : "outline"} 
-                        className="flex-1 w-full text-black font-bold" 
+                        className={`h-10 flex-1 font-bold ${userVote === 1 ? '' : 'hover:bg-secondary/10 hover:text-secondary'}`}
                         disabled={isVoting}
                         onClick={() => handleVote(1)}
                     >
@@ -83,7 +90,7 @@ export default function ActivityVoteCard({ activity, tripId,membersCount }: { ac
                     </Button>
                     <Button 
                         variant={userVote === -1 ? "destructive" : "outline"} 
-                        className="flex-1 w-full" 
+                        className="h-10 flex-1 font-bold"
                         disabled={isVoting}
                         onClick={() => handleVote(-1)}
                     >

@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Search, Bell } from "lucide-react";
+import { Bell, Search } from "lucide-react";
 import md5 from "md5";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -49,33 +49,31 @@ function TopbarContent() {
   }, []);
 
   return (
-    <header className="h-16 bg-white border-b flex items-center justify-between px-6 shadow-sm">
-      <div className="flex items-center gap-4 w-full md:w-1/2">
-        {/* SEARCH */}
+    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#ead9bf] bg-white/90 px-4 shadow-sm backdrop-blur md:px-6">
+      <div className="flex w-full items-center gap-4 md:max-w-xl">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-2.5 text-gray-400 w-4 h-4" />
+          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9f411d]" />
           <Input
             placeholder="Search destinations..."
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            className="pl-9 bg-gray-100 border-none focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="h-10 rounded-lg border-[#ead9bf] bg-[#fff8ec] pl-9 text-sm shadow-none focus-visible:ring-[#c9603a]/30"
           />
         </div>
       </div>
 
-      {/* RIGHT SIDE */}
-      <div className="flex items-center gap-5 ml-4">
-        {/* NOTIFICATION */}
-        <div className="relative cursor-pointer">
-          <Bell className="w-5 h-5 text-gray-600 hover:text-black transition" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+      <div className="ml-4 flex items-center gap-3">
+        <div className="relative flex size-10 cursor-pointer items-center justify-center rounded-lg border border-[#ead9bf] bg-white text-gray-600 transition hover:bg-sidebar hover:text-[#9f411d]">
+          <Bell className="size-5" />
+          <span className="absolute right-2 top-2 size-2.5 rounded-full bg-primary ring-2 ring-white" />
         </div>
 
-        {/* USER */}
-        <div className="flex items-center gap-3">
-          <span className="text-sm text-gray-700 font-medium">{name}</span>
-
-          <Avatar className="ring-2 ring-gray-100">
+        <div className="flex items-center gap-3 rounded-lg border border-[#ead9bf] bg-white px-2.5 py-1.5 shadow-sm">
+          <div className="hidden text-right sm:block">
+            <p className="text-sm font-semibold text-gray-800">{name}</p>
+            <p className="text-xs text-muted-foreground">Traveler</p>
+          </div>
+          <Avatar className="size-9 ring-2 ring-[#f3e4da]">
             <AvatarImage src={avatar} />
             <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>

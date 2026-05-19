@@ -108,6 +108,7 @@ export default function BudgetPage() {
   }, [activities, membersCount])
 
   const selectedPaidBy = formData.paidBy || members[0]?.id || ''
+  const selectedPaidByName = members.find((member) => member.id === selectedPaidBy)?.name || 'Select member'
   const customCategories = ['Food', 'Transport', 'Hotel', 'Shopping', 'Other']
 
   useEffect(() => {
@@ -444,7 +445,9 @@ export default function BudgetPage() {
                   <Label>Paye par</Label>
                   <Select value={selectedPaidBy} onValueChange={(value) => setFormData((current) => ({ ...current, paidBy: value || current.paidBy }))}>
                     <SelectTrigger className="mt-2 w-full bg-white">
-                      <SelectValue />
+                      <SelectValue>
+                        {selectedPaidByName}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {members.length === 0 ? (

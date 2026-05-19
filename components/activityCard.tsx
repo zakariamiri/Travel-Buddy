@@ -4,11 +4,11 @@ import { Card, CardContent } from './ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
 import { FiMoreHorizontal } from "react-icons/fi"
 import { CiTrash, CiLocationOn } from "react-icons/ci"
-import { ACTIVITY_TYPES } from '@/types/types'
+import { Activity, ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
 import { useDraggable } from '@dnd-kit/core';
 
-export default function ActivityCard({ activity, onDelete }: { activity: any; onDelete: () => void }) {
+export default function ActivityCard({ activity, onDelete }: { activity: Activity; onDelete: () => void }) {
   const scheduledTime = (activity.scheduled_time || '').slice(0, 5)
 
   const {attributes, listeners, setNodeRef, transform} = useDraggable({
@@ -34,20 +34,20 @@ export default function ActivityCard({ activity, onDelete }: { activity: any; on
   const Icon = typeToIcon[type] || FaCompass
 
   return (
-    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='w-full cursor-move z-50'  >
-      <CardContent>
+    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='z-50 w-full cursor-move rounded-lg border bg-white py-4 shadow-sm transition hover:shadow-md'  >
+      <CardContent className='px-4'>
         <div className='flex flex-row gap-4 items-start'>
           {/* Activity icon */}
-          <div className='w-8 h-8 bg-white border border-gray-300 rounded-lg flex-shrink-0 mt-4 items-center justify-center flex text-primary'>
-            <Icon className="text-xl" />
+          <div className='mt-1 flex size-10 flex-shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary'>
+            <Icon className="text-lg" />
           </div>
 
           {/* Activity info */}
           <div className='flex-1'>
-            <p className='text-primary font-bold text-lg'>{scheduledTime}</p>
-            <p className='font-semibold text-gray-900'>{activity.title}</p>
-            <p className='flex items-center gap-2 text-gray-600 text-sm'>
-              <CiLocationOn /> {activity.location}
+            <p className='text-sm font-bold text-primary'>{scheduledTime || 'All day'}</p>
+            <p className='line-clamp-1 font-semibold text-gray-900'>{activity.title}</p>
+            <p className='mt-1 flex items-center gap-2 text-sm text-gray-600'>
+              <CiLocationOn /> {activity.location || 'No location'}
             </p>
           </div>
 
