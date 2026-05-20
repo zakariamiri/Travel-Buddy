@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -19,19 +19,46 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
-  const [ready, setReady] = useState(false); // ← session prête ?
+  const [ready, setReady] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
+  const supabase = useMemo(() => createClient(), []);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setReady(true); // session active → affiche le formulaire
-      } else {
-        router.push("/login"); // pas de session → retour login
+    const prepareRecoverySession = async () => {
+      const searchParams = new URLSearchParams(window.location.search);
+      const tokenHash = searchParams.get("token_hash");
+      const type = searchParams.get("type");
+
+      if (tokenHash && type === "recovery") {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        });
+
+        if (error) {
+          setError("This reset link is invalid or has expired.");
+          setReady(false);
+          return;
+        }
+
+        setReady(true);
+        router.replace("/reset-password");
+        return;
       }
-    });
-  }, []);
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (session) {
+        setReady(true);
+      } else {
+        setError("Open the reset link from your email to create a new password.");
+      }
+    };
+
+    prepareRecoverySession();
+  }, [router, supabase.auth]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -64,7 +91,6 @@ export default function ResetPassword() {
 
   return (
     <div className="grid min-h-screen lg:grid-cols-2">
-      {/* IMAGE */}
       <div className="relative h-64 sm:h-80 lg:h-full lg:block hidden">
         <Image
           src={italy}
@@ -76,12 +102,11 @@ export default function ResetPassword() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-6 left-6 text-white max-w-sm">
           <p className="text-lg sm:text-2xl font-semibold leading-relaxed">
-            "A fresh start is the most powerful journey of all."
+            &quot;A fresh start is the most powerful journey of all.&quot;
           </p>
         </div>
       </div>
 
-      {/* FORM */}
       <div className="bg-white flex flex-col items-center justify-center px-6 py-10 lg:px-12 gap-8">
         <div className="text-center flex flex-col items-center gap-3">
           <Image
@@ -110,15 +135,22 @@ export default function ResetPassword() {
                     Password updated!
                   </p>
                   <p className="text-sm text-neutral-500 mt-1">
-                    Redirecting you to login…
+                    Redirecting you to login...
                   </p>
                 </div>
               </div>
             ) : !ready ? (
-              // ← Token pas encore lu, on attend
               <div className="flex flex-col items-center gap-3 py-6 text-center">
-                <div className="w-8 h-8 border-2 border-[#9f411d] border-t-transparent rounded-full animate-spin" />
-                <p className="text-sm text-neutral-500">Verifying your link…</p>
+                {!error && (
+                  <div className="w-8 h-8 border-2 border-[#9f411d] border-t-transparent rounded-full animate-spin" />
+                )}
+                <p
+                  className={`text-sm ${
+                    error ? "text-red-500" : "text-neutral-500"
+                  }`}
+                >
+                  {error || "Verifying your link..."}
+                </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>

@@ -12,8 +12,11 @@ const tripsRoutes = require("./routes/trips");
 const statsRoutes = require("./routes/stats");
 const activitiesRoutes = require("./routes/activities");
 const expensesRoutes = require("./routes/expenses");
+const membersRoutes = require("./routes/members");
+
 app.use("/api/stats", statsRoutes);
 app.use("/api/trips", tripsRoutes);
+app.use("/api", membersRoutes);
 app.use("/api/trips/:tripId/activities", activitiesRoutes);
 app.use("/api/trips/:tripId/expenses", expensesRoutes);
 app.get("/", (req, res) => res.json({ status: " Travel Buddy API running" }));

@@ -19,13 +19,31 @@ import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
 
+type DashboardTrip = {
+  id: string;
+  name: string;
+  cover_url?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: "CONFIRMED" | "PLANNING" | "PAST";
+  role?: string;
+  members?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+    email?: string | null;
+    role: "owner" | "contributor" | "viewer";
+    joined_at?: string | null;
+  }[];
+};
+
 export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
-  const [trips, setTrips] = useState<any[]>([]);
+  const [trips, setTrips] = useState<DashboardTrip[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -78,6 +96,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (token) fetchTrips(token, filter);
   }, [token, filter]);
 
@@ -115,7 +134,7 @@ export default function Dashboard() {
       });
       setDialogOpen(false);
       fetchTrips(token, filter);
-    } catch (err) {
+    } catch {
       setFormError("Impossible de contacter le serveur.");
     } finally {
       setSubmitting(false);
@@ -198,7 +217,7 @@ export default function Dashboard() {
                       if (!file) return;
 
                       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-                      const { data, error } = await supabase.storage
+                      const { error } = await supabase.storage
                         .from("trip-covers")
                         .upload(fileName, file);
 
@@ -222,6 +241,7 @@ export default function Dashboard() {
                   {formData.cover_url && (
                     <img
                       src={formData.cover_url}
+                      alt="Trip cover preview"
                       className="mt-2 h-24 w-full object-cover rounded-xl"
                     />
                   )}
@@ -318,6 +338,7 @@ export default function Dashboard() {
               <a href={`/dashboard/${trip.id}`} key={trip.id} className="block">
                 <TripCard
                   key={trip.id}
+                  id={trip.id}
                   title={trip.name}
                   date={
                     trip.start_date && trip.end_date
@@ -329,6 +350,8 @@ export default function Dashboard() {
                     "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
                   }
                   status={trip.status}
+                  role={trip.role}
+                  members={trip.members || []}
                 />
               </a>
               ))}
