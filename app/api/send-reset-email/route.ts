@@ -21,7 +21,9 @@ export async function POST(request: NextRequest) {
   }
 
   const token_hash = data.properties.hashed_token;
-  const resetLink = `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback?token_hash=${token_hash}&type=recovery`;
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
+  const resetLink = `${siteUrl}/reset-password?token_hash=${token_hash}&type=recovery`;
 
   const transporter = nodemailer.createTransport({
     service: "gmail",

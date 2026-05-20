@@ -1,5 +1,9 @@
 const supabase = require("../supabaseClient");
 
+function generateInviteCode() {
+  return Math.random().toString(16).slice(2, 10);
+}
+
 function computeStatus(start_date, end_date, is_confirmed) {
   if (!start_date) return "PLANNING";
 
@@ -18,7 +22,7 @@ function computeStatus(start_date, end_date, is_confirmed) {
 async function getMembersByTripIds(tripIds) {
   const { data: memberRows, error: membersErr } = await supabase
     .from("trip_members")
-    .select("trip_id, user_id, role")
+    .select("trip_id, user_id, role, joined_at")
     .in("trip_id", tripIds);
 
   if (membersErr) throw new Error(membersErr.message);
@@ -44,9 +48,13 @@ async function getMembersByTripIds(tripIds) {
     membersByTrip[member.trip_id].push({
       id: member.user_id,
       role: member.role,
-      full_name: profilesById[member.user_id]?.full_name || null,
+      full_name:
+        profilesById[member.user_id]?.full_name ||
+        profilesById[member.user_id]?.email?.split("@")[0] ||
+        "User",
       avatar_url: profilesById[member.user_id]?.avatar_url || null,
       email: profilesById[member.user_id]?.email || null,
+      joined_at: member.joined_at || null,
     });
   }
 
@@ -127,18 +135,30 @@ async function createTrip(
   userId,
   { name, destination, cover_url, start_date, end_date },
 ) {
-  const { data: trip, error: tripErr } = await supabase
-    .from("trips")
-    .insert({
-      name,
-      destination,
-      cover_url,
-      start_date: start_date || null,
-      end_date: end_date || null,
-      is_confirmed: false,
-    })
-    .select()
-    .single();
+  let trip;
+  let tripErr;
+
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    const result = await supabase
+      .from("trips")
+      .insert({
+        name,
+        destination,
+        cover_url,
+        start_date: start_date || null,
+        end_date: end_date || null,
+        invite_code: generateInviteCode(),
+        is_confirmed: false,
+      })
+      .select()
+      .single();
+
+    trip = result.data;
+    tripErr = result.error;
+
+    if (!tripErr) break;
+    if (tripErr.code !== "23505") break;
+  }
 
   if (tripErr) throw new Error(tripErr.message);
 
@@ -146,7 +166,10 @@ async function createTrip(
     .from("trip_members")
     .insert({ trip_id: trip.id, user_id: userId, role: "owner" });
 
-  if (memberErr) throw new Error(memberErr.message);
+  if (memberErr) {
+    await supabase.from("trips").delete().eq("id", trip.id);
+    throw new Error(memberErr.message);
+  }
 
   return trip;
 }

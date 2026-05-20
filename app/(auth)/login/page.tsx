@@ -19,6 +19,12 @@ export default function Login() {
   const router = useRouter();
   const supabase = createClient();
 
+  const getRedirectPath = () => {
+    if (typeof window === 'undefined') return '/dashboard';
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    return redirect?.startsWith('/') ? redirect : '/dashboard';
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -38,7 +44,7 @@ export default function Login() {
         // Wait a moment for session to be set in cookies
         await new Promise(resolve => setTimeout(resolve, 500));
         router.refresh();
-        router.push('/dashboard');
+        router.push(getRedirectPath());
       } else {
         setError('Login failed. Please try again.');
       }
@@ -58,7 +64,7 @@ export default function Login() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getRedirectPath())}`,
         },
       });
       if (error) {
