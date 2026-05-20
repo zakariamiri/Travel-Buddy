@@ -15,6 +15,44 @@ function computeStatus(start_date, end_date, is_confirmed) {
   return "PLANNING";
 }
 
+async function getMembersByTripIds(tripIds) {
+  const { data: memberRows, error: membersErr } = await supabase
+    .from("trip_members")
+    .select("trip_id, user_id, role")
+    .in("trip_id", tripIds);
+
+  if (membersErr) throw new Error(membersErr.message);
+
+  const userIds = [...new Set((memberRows || []).map((member) => member.user_id))];
+  const { data: profiles, error: profilesErr } = userIds.length
+    ? await supabase
+        .from("users")
+        .select("id, full_name, avatar_url, email")
+        .in("id", userIds)
+    : { data: [], error: null };
+
+  if (profilesErr) throw new Error(profilesErr.message);
+
+  const profilesById = {};
+  for (const profile of profiles || []) {
+    profilesById[profile.id] = profile;
+  }
+
+  const membersByTrip = {};
+  for (const member of memberRows || []) {
+    if (!membersByTrip[member.trip_id]) membersByTrip[member.trip_id] = [];
+    membersByTrip[member.trip_id].push({
+      id: member.user_id,
+      role: member.role,
+      full_name: profilesById[member.user_id]?.full_name || null,
+      avatar_url: profilesById[member.user_id]?.avatar_url || null,
+      email: profilesById[member.user_id]?.email || null,
+    });
+  }
+
+  return membersByTrip;
+}
+
 async function getTripsByUser(userId, filter = "all") {
   const { data: memberRows, error: memberErr } = await supabase
     .from("trip_members")
@@ -36,16 +74,7 @@ async function getTripsByUser(userId, filter = "all") {
 
   if (tripsErr) throw new Error(tripsErr.message);
 
-  const { data: allMembers } = await supabase
-    .from("trip_members")
-    .select("trip_id, role, users ( id, full_name, avatar_url )")
-    .in("trip_id", tripIds);
-
-  const membersByTrip = {};
-  for (const m of allMembers || []) {
-    if (!membersByTrip[m.trip_id]) membersByTrip[m.trip_id] = [];
-    membersByTrip[m.trip_id].push({ role: m.role, ...m.users });
-  }
+  const membersByTrip = await getMembersByTripIds(tripIds);
 
   let result = trips.map((trip) => ({
     ...trip,
@@ -79,7 +108,19 @@ async function getTripById(tripId) {
 
   if (tripErr) throw new Error(tripErr.message);
 
-  return trip;
+ const { count, error: countErr } = await supabase
+    .from("trip_members")
+    .select("*", { count: "exact", head: true })
+    .eq("trip_id", tripId);
+  if (countErr) throw new Error(countErr.message);
+
+  const membersByTrip = await getMembersByTripIds([tripId]);
+
+  return {
+    ...trip,
+    membersCount: count ?? 0,
+    members: membersByTrip[tripId] || [],
+  };
 }
 
 async function createTrip(

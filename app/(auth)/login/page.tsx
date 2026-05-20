@@ -89,7 +89,7 @@ export default function Login() {
 
         <div className="absolute bottom-6 left-6 text-white max-w-sm">
           <p className="text-lg sm:text-2xl font-semibold leading-relaxed">
-            "The best way to plan your next escape is with a companion who knows the way."
+            &quot;The best way to plan your next escape is with a companion who knows the way.&quot;
           </p>
         </div>
       </div>

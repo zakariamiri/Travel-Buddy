@@ -2,19 +2,77 @@
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { apiUrl } from "@/lib/api";
+import { useEffect, useState } from "react";
 
 export default function Sidebar() {
   const supabase = createClient();
   const router = useRouter();
+  const [activeTripId, setActiveTripId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchActiveTrip = async () => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      if (!token) return;
+
+      try {
+        const response = await fetch(apiUrl("/api/stats"), {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!response.ok) return;
+        const stats = await response.json();
+        setActiveTripId(stats?.activeTrip?.id || null);
+      } catch (error) {
+        console.error("Error loading active trip:", error);
+      }
+    };
+
+    fetchActiveTrip();
+  }, [supabase.auth]);
+
   const handleLogout = async () => {
     await supabase.auth.signOut();
     router.push("/login");
   };
+
+  const handleExpensesClick = async () => {
+    if (activeTripId) {
+      router.push(`/dashboard/${activeTripId}/budget`);
+      return;
+    }
+
+    const { data: sessionData } = await supabase.auth.getSession();
+    const token = sessionData.session?.access_token;
+    if (!token) {
+      router.push("/login");
+      return;
+    }
+
+    try {
+      const response = await fetch(apiUrl("/api/trips?filter=all"), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const trips = await response.json();
+      const firstTripId = Array.isArray(trips) ? trips[0]?.id : null;
+
+      if (firstTripId) {
+        router.push(`/dashboard/${firstTripId}/budget`);
+        return;
+      }
+    } catch (error) {
+      console.error("Error opening expenses:", error);
+    }
+
+    router.push("/dashboard");
+  };
+
   return (
     <aside className="w-64 bg-[#FFEFD4] border-r flex flex-col p-4 gap-3 h-screen sticky top-0">
-      <img src="/logo2.png" className="mb-8 mt-4 mr-2" />
+      <img src="/logo2.png" alt="Travel Buddy" className="mb-8 mt-4 mr-2" />
       {/* Dashboard */}
       <Button
+        onClick={() => router.push("/dashboard")}
         variant="ghost"
         className="group justify-start gap-4 text-base rounded-md px-3 py-6 
                     bg-transparent text-gray-800
@@ -27,6 +85,7 @@ export default function Sidebar() {
 
       {/* Trips */}
       <Button
+        onClick={() => router.push("/dashboard")}
         variant="ghost"
         className="group justify-start gap-4 text-base rounded-md px-3 py-6 
                     bg-transparent text-gray-800
@@ -51,6 +110,7 @@ export default function Sidebar() {
 
       {/* Expenses */}
       <Button
+        onClick={handleExpensesClick}
         variant="ghost"
         className="group justify-start gap-4 text-base rounded-md px-3 py-6 
                     bg-transparent text-gray-800

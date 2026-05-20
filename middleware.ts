@@ -16,7 +16,7 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith(route),
   );
 
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
     },
