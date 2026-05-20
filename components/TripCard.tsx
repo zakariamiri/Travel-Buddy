@@ -8,6 +8,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { apiUrl } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { Crown } from "lucide-react";
 import md5 from "md5";
@@ -116,13 +117,14 @@ export default function TripCard({
       const token = data.session?.access_token;
       if (!token) return;
 
-      const res = await fetch(`http://localhost:3001/api/trips/${id}/members`, {
+      const res = await fetch(apiUrl(`/api/trips/${id}/members`), {
         headers: { Authorization: `Bearer ${token}` },
       });
 
       if (!res.ok) return;
 
-      const payload = await res.json();
+      const text = await res.text();
+      const payload = text ? JSON.parse(text) : [];
       if (Array.isArray(payload) && payload.length > 0) {
         setMembers(payload);
       }
