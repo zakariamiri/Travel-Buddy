@@ -1,5 +1,6 @@
 "use client";
 
+import { apiUrl } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -12,6 +13,14 @@ type InviteCodeResponse = {
   invite_code?: string;
   error?: string;
 };
+
+function parseApiResponse(text: string): InviteCodeResponse {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("Backend indisponible. Lance le serveur backend puis réessaie.");
+  }
+}
 
 export default function InviteLinkBox({ tripId }: InviteLinkBoxProps) {
   const supabase = useMemo(() => createClient(), []);
@@ -30,20 +39,10 @@ export default function InviteLinkBox({ tripId }: InviteLinkBoxProps) {
         throw new Error("Vous devez être connecté.");
       }
 
-      const res = await fetch(
-        `http://localhost:3001/api/trips/${tripId}/invite-code`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        },
-      );
-      const text = await res.text();
-      let payload: InviteCodeResponse = {};
-
-      try {
-        payload = text ? JSON.parse(text) : {};
-      } catch {
-        throw new Error("Redémarre le backend puis réessaie.");
-      }
+      const res = await fetch(apiUrl(`/api/trips/${tripId}/invite-code`), {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const payload = parseApiResponse(await res.text());
 
       if (!res.ok) {
         throw new Error(payload.error || "Impossible de créer le lien.");

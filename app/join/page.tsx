@@ -4,6 +4,19 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { toast } from "sonner";
+import { apiUrl } from "@/lib/api";
+
+type JoinResponse = {
+  error?: string;
+};
+
+function parseApiResponse(text: string): JoinResponse {
+  try {
+    return text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error("Backend indisponible. Lance le serveur backend puis réessaie.");
+  }
+}
 
 function JoinTripContent() {
   const router = useRouter();
@@ -30,7 +43,7 @@ function JoinTripContent() {
       }
 
       try {
-        const res = await fetch("http://localhost:3001/api/members/join", {
+        const res = await fetch(apiUrl("/api/members/join"), {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -38,7 +51,7 @@ function JoinTripContent() {
           },
           body: JSON.stringify({ invite_code: code }),
         });
-        const payload = await res.json();
+        const payload = parseApiResponse(await res.text());
 
         if (!res.ok) {
           throw new Error(payload.error || "Impossible de rejoindre le voyage.");

@@ -1,6 +1,7 @@
 'use client'
 
 import Trip from '@/types/types';
+import { apiUrl } from '@/lib/api';
 import { createClient } from '@/utils/supabase/client';
 import { Crown } from 'lucide-react';
 import md5 from 'md5';
@@ -101,13 +102,14 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
 
             try {
                 const res = await fetch(
-                    `http://localhost:3001/api/trips/${tripDetails.id}/members`,
+                    apiUrl(`/api/trips/${tripDetails.id}/members`),
                     { headers: { Authorization: `Bearer ${token}` } },
                 );
 
                 if (!res.ok) return;
 
-                const data = await res.json();
+                const text = await res.text();
+                const data = text ? JSON.parse(text) : [];
                 setMembers(Array.isArray(data) ? data : []);
             } catch (err) {
                 console.error('Error fetching trip members:', err);
