@@ -91,32 +91,30 @@ async function getTripMembers(tripId) {
     .eq("trip_id", tripId);
 
   if (membersError) throw new Error(membersError.message);
+  if (!memberRows?.length) return [];
 
-  const userIds = [...new Set((memberRows || []).map((row) => row.user_id))];
-  const { data: users, error: usersError } = userIds.length
-    ? await supabase
-        .from("users")
-        .select("id, full_name, avatar_url, email")
-        .in("id", userIds)
-    : { data: [], error: null };
+  const userIds = [...new Set(memberRows.map((row) => row.user_id))];
 
+  // Fetch from auth.users via admin API
+  const { data: { users }, error: usersError } = await supabase.auth.admin.listUsers();
   if (usersError) throw new Error(usersError.message);
 
   const usersById = {};
-  for (const user of users || []) {
-    usersById[user.id] = user;
+  for (const user of users) {
+    if (userIds.includes(user.id)) {
+      usersById[user.id] = user;
+    }
   }
 
-  return (memberRows || [])
+  return memberRows
     .map((row) => {
       const user = usersById[row.user_id];
-
       return {
         role: row.role,
         joined_at: row.joined_at,
         id: user?.id || row.user_id,
-        full_name: user?.full_name || user?.email?.split("@")[0] || "User",
-        avatar_url: user?.avatar_url || null,
+        full_name: user?.user_metadata?.full_name || user?.email?.split("@")[0] || "User",
+        avatar_url: user?.user_metadata?.avatar_url || null,
         email: user?.email || null,
       };
     })
@@ -126,7 +124,6 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
-
 module.exports = {
   generateInviteCode,
   getInviteCode,

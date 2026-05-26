@@ -10,7 +10,8 @@ import { toast } from 'sonner'
 import { FaThumbsUp,FaThumbsDown  } from "react-icons/fa";
 import { apiUrl } from '@/lib/api'
 
-export default function ActivityVoteCard({ activity, tripId,membersCount }: { activity?: Activity | null; tripId: string; membersCount: number }) {
+export default function ActivityVoteCard({ activity, tripId,membersCount,onSuccess }: { activity?: Activity | null; tripId: string; membersCount: number; onSuccess: () => void }) {
+    
     const { currentToken } = useTripContext()
     const [isVoting, setIsVoting] = useState(false)
     
@@ -46,6 +47,7 @@ export default function ActivityVoteCard({ activity, tripId,membersCount }: { ac
 
             if (!res.ok) throw new Error('Failed to submit vote');
             toast.success('Vote recorded!');
+            onSuccess() // Call the success callback
         } catch (error) {
             toast.error('Error recording vote.');
             setUserVote(previousVote) // Revert on fail

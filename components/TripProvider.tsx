@@ -74,7 +74,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         fetchActivities();
-    }, [id, currentToken]);
+    }, [id, currentToken,activities]); // Refetch when activities length changes to get latest data after votes
 
     const handleDelete = async (activityId: string) => {
         try {

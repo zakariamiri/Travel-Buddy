@@ -3,7 +3,7 @@ const supabase = require("../supabaseClient");
 
 
 async function getMembersCount(tripId){
-    const { data, error } = await supabase
+    const { count, error } = await supabase
         .from("trip_members")
         .select("*", { count: "exact", head: true })
         .eq("trip_id", tripId);
@@ -11,7 +11,7 @@ async function getMembersCount(tripId){
         console.error("Error fetching members count:", error);
         throw error;
     }
-    return data.count;
+    return count;
 }
 
 async function getActivitiesByTrip(tripId, userId) {
@@ -131,19 +131,53 @@ async function deleteActivity(activityId) {
     }
     return activity;
 }
-async function castVote(activityId, userId, voteValue){
-    // Upsert vote: Update if it exists, insert if it doesn't
-    const { data, error } = await supabase
-        .from('activity_votes')
-        .upsert({ 
-            activity_id: activityId, 
-            user_id: userId, 
-            vote_value: voteValue 
-        }, { onConflict: 'activity_id,user_id' });
+async function castVote(activityId, userId, voteValue) {
+  const { error: voteError } = await supabase
+    .from("activity_votes")
+    .upsert(
+      { activity_id: activityId, user_id: userId, vote_value: voteValue },
+      { onConflict: "activity_id,user_id" }
+    );
 
-    if (error) throw error;
-    return data;
-};
+  if (voteError) throw voteError;
+
+  // Get trip_id from the activity
+  const { data: activity, error: activityError } = await supabase
+    .from("trip_items")
+    .select("trip_id")
+    .eq("id", activityId)
+    .single();
+
+  if (activityError) throw activityError;
+
+  const membersCount = await getMembersCount(activity.trip_id);
+
+  const [{ count: likesCount }, { count: dislikesCount }] = await Promise.all([
+    supabase
+      .from("activity_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("activity_id", activityId)
+      .eq("vote_value", 1),
+
+    supabase
+      .from("activity_votes")
+      .select("*", { count: "exact", head: true })
+      .eq("activity_id", activityId)
+      .eq("vote_value", -1),
+  ]);
+
+  if (likesCount >= Math.ceil(membersCount / 2)) {
+    await supabase
+      .from("trip_items")
+      .update({ status: "approved" })
+      .eq("id", activityId);
+  } else if (dislikesCount >= Math.ceil(membersCount / 2)) {
+    await supabase
+      .from("trip_items")
+      .update({ status: "rejected" })
+      .eq("id", activityId);
+  }
+}
 
 module.exports = {
     getActivitiesByTrip,
