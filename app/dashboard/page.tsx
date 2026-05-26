@@ -17,6 +17,25 @@ import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
+import { apiUrl } from "@/lib/api";
+
+type DashboardTrip = {
+  id: string;
+  name: string;
+  cover_url?: string | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  status: "CONFIRMED" | "PLANNING" | "PAST";
+  role?: string;
+  members?: {
+    id: string;
+    full_name: string;
+    avatar_url: string | null;
+    email?: string | null;
+    role: "owner" | "contributor" | "viewer";
+    joined_at?: string | null;
+  }[];
+};
 
 export default function Dashboard() {
   const supabase = createClient();
@@ -24,7 +43,7 @@ export default function Dashboard() {
 
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
-  const [trips, setTrips] = useState<any[]>([]);
+  const [trips, setTrips] = useState<DashboardTrip[]>([]);
   const [filter, setFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -64,7 +83,7 @@ export default function Dashboard() {
     setLoading(true);
     try {
       const res = await fetch(
-        `http://localhost:3001/api/trips?filter=${currentFilter}`,
+        apiUrl(`/api/trips?filter=${currentFilter}`),
         { headers: { Authorization: `Bearer ${currentToken}` } },
       );
       const data = await res.json();
@@ -77,6 +96,7 @@ export default function Dashboard() {
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (token) fetchTrips(token, filter);
   }, [token, filter]);
 
@@ -90,7 +110,7 @@ export default function Dashboard() {
 
     setSubmitting(true);
     try {
-      const res = await fetch("http://localhost:3001/api/trips", {
+      const res = await fetch(apiUrl("/api/trips"), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -114,7 +134,7 @@ export default function Dashboard() {
       });
       setDialogOpen(false);
       fetchTrips(token, filter);
-    } catch (err) {
+    } catch {
       setFormError("Impossible de contacter le serveur.");
     } finally {
       setSubmitting(false);
@@ -128,23 +148,28 @@ export default function Dashboard() {
       <div className="flex-1 flex flex-col">
         <Topbar />
 
-        <main className="p-6">
-          <h1 className="text-4xl font-bold pb-4 flex items-center gap-2">
-            Welcome, {name}
-            <img src="/au-revoir.png" alt="wave" className="w-17 h-17 ml-3" />
-          </h1>
+        <main className="flex-1 bg-background p-5 md:p-8">
+          <section className="mb-6 rounded-lg border border-[#ead9bf] bg-white p-5 shadow-sm md:p-6">
+            <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+              <div>
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
+                  <i className="ri-suitcase-3-line text-sm" />
+                  Travel Buddy Dashboard
+                </div>
+                <h1 className="flex items-center gap-3 text-3xl font-bold tracking-normal text-foreground md:text-4xl">
+                  Welcome, {name}
+                  <img src="/au-revoir.png" alt="wave" className="size-12 md:size-14" />
+                </h1>
+                <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
+                  Where next? Your collaborative itineraries are ready for the next adventure.
+                </p>
+              </div>
 
-          <p className="text-gray-500 pb-7">
-            Where next? Your collaborative itineraries are ready for the next
-            adventure.
-          </p>
-
-          {}
-          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-            <DialogTrigger className="mb-6 bg-[#9f411d] text-white hover:bg-[#8a3412] font-medium text-md rounded-xl px-7 py-2 flex items-center gap-2 shadow-xl">
-              <i className="ri-add-line text-md"></i>
-              New Trip
-            </DialogTrigger>
+              <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+                <DialogTrigger className="flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#9f411d]">
+                  <i className="ri-add-line text-lg"></i>
+                  New Trip
+                </DialogTrigger>
 
             <DialogContent className="rounded-2xl max-w-md">
               <DialogHeader>
@@ -192,7 +217,7 @@ export default function Dashboard() {
                       if (!file) return;
 
                       const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-                      const { data, error } = await supabase.storage
+                      const { error } = await supabase.storage
                         .from("trip-covers")
                         .upload(fileName, file);
 
@@ -216,6 +241,7 @@ export default function Dashboard() {
                   {formData.cover_url && (
                     <img
                       src={formData.cover_url}
+                      alt="Trip cover preview"
                       className="mt-2 h-24 w-full object-cover rounded-xl"
                     />
                   )}
@@ -263,19 +289,24 @@ export default function Dashboard() {
               </div>
             </DialogContent>
           </Dialog>
+            </div>
+          </section>
 
           <StatsCards />
 
           {}
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-black">My Trips</h2>
+          <div className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:flex-row sm:items-center">
+            <div>
+              <h2 className="text-2xl font-bold text-foreground">My Trips</h2>
+              <p className="text-sm text-muted-foreground">All your plans in one quiet place.</p>
+            </div>
 
-            <div className="bg-[#f3e4da] p-1 rounded-xl flex gap-1 shadow-inner">
+            <div className="flex w-fit gap-1 rounded-lg bg-[#f3e4da] p-1 shadow-inner">
               {["all", "upcoming", "past"].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`px-4 py-1.5 text-sm font-semibold rounded-lg transition capitalize ${
+                  className={`rounded-md px-4 py-2 text-sm font-semibold capitalize transition ${
                     filter === f
                       ? "bg-[#9f411d] text-white shadow"
                       : "text-gray-500 hover:text-[#7F2A07]"
@@ -289,14 +320,16 @@ export default function Dashboard() {
 
           {}
           {loading ? (
-            <div className="flex items-center justify-center h-40">
+            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-white">
               <p className="text-gray-400 text-lg animate-pulse">
                 Loading trips...
               </p>
             </div>
           ) : trips.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-40 gap-2">
-              <p className="text-gray-500 text-lg">No trips yet !</p>
+            <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-white">
+              <i className="ri-map-pin-add-line text-4xl text-primary" />
+              <p className="text-lg font-semibold text-foreground">No trips yet</p>
+              <p className="text-sm text-muted-foreground">Create your first trip to start planning.</p>
             
             </div>
           ) : (
@@ -305,6 +338,7 @@ export default function Dashboard() {
               <a href={`/dashboard/${trip.id}`} key={trip.id} className="block">
                 <TripCard
                   key={trip.id}
+                  id={trip.id}
                   title={trip.name}
                   date={
                     trip.start_date && trip.end_date
@@ -316,6 +350,8 @@ export default function Dashboard() {
                     "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
                   }
                   status={trip.status}
+                  role={trip.role}
+                  members={trip.members || []}
                 />
               </a>
               ))}

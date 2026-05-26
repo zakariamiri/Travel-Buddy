@@ -10,13 +10,14 @@ export async function middleware(request: NextRequest) {
     "/auth/callback",
     "/forgot-password",
     "/reset-password",
+    "/join",
     "/api/send-reset-email",
   ];
   const isPublicRoute = publicRoutes.some((route) =>
     pathname.startsWith(route),
   );
 
-  let supabaseResponse = NextResponse.next({
+  const supabaseResponse = NextResponse.next({
     request: {
       headers: request.headers,
     },

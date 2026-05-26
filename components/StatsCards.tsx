@@ -1,11 +1,14 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { apiUrl } from "@/lib/api";
 
 // Define the Stats type
 interface Stats {
   activeTrip: {
+    id: string;
     name: string;
     daysUntilStart: number;
     collaborators: number;
@@ -31,7 +34,7 @@ export default function StatsCards() {
       }
 
       try {
-        const res = await fetch("http://localhost:3001/api/stats", {
+        const res = await fetch(apiUrl("/api/stats"), {
           headers: { Authorization: `Bearer ${token}` },
         });
 
@@ -62,28 +65,31 @@ export default function StatsCards() {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
       {/* Active Trip */}
-      <div className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col justify-between hover:scale-[1.02] transition">
-        <span className="text-xs bg-green-200 text-green-700 px-2 py-1 rounded-full w-fit font-semibold">
+      <div className="flex flex-col justify-between rounded-lg border border-[#ead9bf] bg-white p-5 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <span className="w-fit rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-bold text-secondary">
           ACTIVE TRIP
         </span>
         {stats?.activeTrip?.start_date ? (
           <>
-            <h3 className="text-lg font-semibold mt-2">
+            <h3 className="mt-4 text-xl font-bold text-foreground">
               {stats.activeTrip.name}
             </h3>
-            <p className="text-sm text-gray-600">
+            <p className="mt-1 text-sm text-muted-foreground">
               {stats.activeTrip.daysUntilStart} days •{" "}
               {stats.activeTrip.collaborators} collaborators
             </p>
-            <button className="text-[#9f411d] text-sm font-semibold mt-3">
+            <Link
+              href={`/dashboard/${stats.activeTrip.id}`}
+              className="mt-4 text-sm font-bold text-[#9f411d]"
+            >
               Open Itinerary →
-            </button>
+            </Link>
           </>
         ) : (
           <>
-            <h3 className="text-lg font-semibold mt-2 text-gray-400">
+            <h3 className="mt-4 text-lg font-semibold text-gray-400">
               No upcoming trip
             </h3>
             <p className="text-sm text-gray-400">
@@ -94,25 +100,35 @@ export default function StatsCards() {
       </div>
 
       {/* Money */}
-      <div className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition">
-        <i className="ri-hand-coin-fill text-3xl mb-2 text-[#977109]"></i>
-        <h3 className="text-xl font-bold">
+      <Link
+        href={stats?.activeTrip?.id ? `/dashboard/${stats.activeTrip.id}/budget` : "/dashboard"}
+        className="flex flex-col items-center justify-center rounded-lg border border-[#ead9bf] bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md"
+      >
+        <div className="mb-3 flex size-11 items-center justify-center rounded-lg bg-accent/20 text-[#977109]">
+          <i className="ri-hand-coin-fill text-2xl"></i>
+        </div>
+        <h3 className="text-2xl font-bold text-foreground">
           {stats?.pendingSplit != null
-            ? `$${Number(stats.pendingSplit).toLocaleString("en-US", { minimumFractionDigits: 0 })}`
-            : "—"}
+            ? `${Number(stats.pendingSplit).toLocaleString("fr-MA", { minimumFractionDigits: 0 })} DH`
+            : "-"}
         </h3>
-        <p className="text-sm text-gray-600">Pending Split</p>
-      </div>
+        <p className="text-sm text-muted-foreground">Pending Split</p>
+        <span className="mt-2 text-xs font-semibold text-[#9f411d]">
+          Open budget →
+        </span>
+      </Link>
 
       {/* Countdown / Next Trip */}
-      <div className="bg-[#EBD5C8] rounded-2xl p-5 flex flex-col items-center justify-center text-center hover:scale-[1.02] transition">
-        <i className="ri-timer-flash-fill text-3xl mb-2 text-[#4A6547]"></i>
-        <h3 className="text-xl font-bold">
+      <div className="flex flex-col items-center justify-center rounded-lg border border-[#ead9bf] bg-white p-5 text-center shadow-sm transition hover:-translate-y-0.5 hover:shadow-md">
+        <div className="mb-3 flex size-11 items-center justify-center rounded-lg bg-secondary/10 text-[#4A6547]">
+          <i className="ri-timer-flash-fill text-2xl"></i>
+        </div>
+        <h3 className="text-2xl font-bold text-foreground">
           {stats?.daysUntilNextTrip != null
             ? `${stats.daysUntilNextTrip} days`
-            : "—"}
+            : "-"}
         </h3>
-        <p className="text-sm text-gray-600">until your next trip</p>
+        <p className="text-sm text-muted-foreground">until your next trip</p>
       </div>
     </div>
   );

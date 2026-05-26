@@ -5,7 +5,7 @@ import Trip from '@/types/types';
 import { toast } from "sonner";
 import { useParams } from 'next/navigation';
 import { DragEndEvent } from '@dnd-kit/core';
-import apiUrl from '@/utils/apiUrl';
+import { apiUrl } from '@/lib/api';
 
 interface TripContextType {
     tripDetails: Trip | null;
@@ -74,7 +74,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         fetchActivities();
-    }, [id, currentToken]);
+    }, [id, currentToken,activities]);
 
     const handleDelete = async (activityId: string) => {
         try {

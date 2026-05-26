@@ -2,7 +2,8 @@ const activityService = require('../services/activityService');
 
 async function getActivitiesByTrip(req, res) {
     try {
-        const activities = await activityService.getActivitiesByTrip(req.params.tripId);
+        const userId = req.user?.id;
+        const activities = await activityService.getActivitiesByTrip(req.params.tripId, userId);
         res.json(activities);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -10,7 +11,7 @@ async function getActivitiesByTrip(req, res) {
 }
 
 async function createActivity(req, res) {
-    const { title, type, location, notes, image_url, scheduled_time, scheduled_date, position, status, lat, lon } = req.body;
+    const { title, type, location, notes, image_url, scheduled_time, scheduled_date, position, status, price_per_person, lat, lon } = req.body;
 
     if (!title || !type) {
         return res.status(400).json({ error: "Title and type are required" });
@@ -30,6 +31,7 @@ async function createActivity(req, res) {
             scheduled_time,
             scheduled_date,
             status: status || 'pending',
+            price_per_person,
             lat,
             lon
         });
@@ -61,9 +63,33 @@ async function deleteActivity(req, res) {
     }
 }
 
+async function voteActivity(req, res) {
+  try {
+      const { activityId } = req.params;
+      const { vote_value } = req.body; 
+      const userId = req.user.id;
+
+      const voteValue = Number(vote_value);
+      if (!Number.isFinite(voteValue) || (voteValue !== 1 && voteValue !== -1)) {
+          return res.status(400).json({ error: 'vote_value must be 1 or -1' });
+      }
+
+      const result = await activityService.castVote(activityId, userId, voteValue);
+      res.status(200).json(result);
+  } catch (error) {
+      console.error('voteActivity error:', error);
+      res.status(500).json({
+          error: error?.message || 'Unknown error',
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+      });
+  }
+};
 module.exports = {
     getActivitiesByTrip,
     createActivity,
     deleteActivity,
-    updateActivity
+    updateActivity,
+    voteActivity,
 };
