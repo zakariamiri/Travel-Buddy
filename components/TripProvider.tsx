@@ -5,7 +5,7 @@ import Trip from '@/types/types';
 import { toast } from "sonner";
 import { useParams } from 'next/navigation';
 import { DragEndEvent } from '@dnd-kit/core';
-import { apiUrl } from '@/lib/api';
+import apiUrl from '@/utils/apiUrl';
 
 interface TripContextType {
     tripDetails: Trip | null;
