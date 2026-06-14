@@ -51,21 +51,21 @@ export default function Votespage() {
                 </header>
 
                 <section className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-lg border bg-white p-5 shadow-sm">
+                    <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                         <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <ThumbsUp className="size-5" />
                         </div>
                         <p className="mt-5 text-sm font-medium text-muted-foreground">Total activities</p>
                         <p className="mt-1 text-2xl font-bold text-foreground">{activities.length}</p>
                     </div>
-                    <div className="rounded-lg border bg-white p-5 shadow-sm">
+                    <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                         <div className="flex size-11 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
                             <CheckCircle2 className="size-5" />
                         </div>
                         <p className="mt-5 text-sm font-medium text-muted-foreground">Approved</p>
                         <p className="mt-1 text-2xl font-bold text-foreground">{filters[2].count}</p>
                     </div>
-                    <div className="rounded-lg border bg-white p-5 shadow-sm">
+                    <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                         <div className="flex size-11 items-center justify-center rounded-lg bg-accent/20 text-[#9f411d]">
                             <Clock3 className="size-5" />
                         </div>
@@ -75,18 +75,18 @@ export default function Votespage() {
                 </section>
 
                 <Tabs defaultValue="All" className="w-full">
-                    <TabsList className="h-auto w-full justify-start overflow-x-auto rounded-lg bg-sidebar p-1 text-foreground md:w-fit">
+                    <TabsList className="grid !h-auto w-full grid-cols-2 gap-1 overflow-hidden rounded-lg border border-[#e6d6c9] bg-white p-1 text-foreground shadow-[0_4px_14px_rgba(127,42,7,0.07)] sm:grid-cols-4 lg:w-fit">
                         {filters.map((filter) => {
                             const Icon = filter.icon;
                             return (
                                 <TabsTrigger
                                     key={filter.value}
                                     value={filter.value}
-                                    className="min-w-fit gap-2 rounded-md px-3 py-2 data-active:bg-primary data-active:text-white hover:bg-primary hover:text-white"
+                                    className="group !h-8 min-w-0 gap-1.5 rounded-md border-0 bg-transparent px-2.5 text-xs font-semibold text-[#745f55] shadow-none transition-all hover:bg-[#faf1ea] hover:text-[#9f411d] data-active:!bg-[#9f411d] data-active:!text-white data-active:shadow-[0_3px_9px_rgba(127,42,7,0.18)]"
                                 >
-                                    <Icon className="size-4" />
-                                    {filter.label}
-                                    <span className="rounded-full bg-white/70 px-2 py-0.5 text-xs font-bold text-primary">
+                                    <Icon className="size-3.5" />
+                                    <span className="truncate">{filter.label}</span>
+                                    <span className="ml-auto min-w-4 rounded-full bg-[#f1e6de] px-1 py-0.5 text-center text-[10px] font-bold leading-none text-[#8a5b45] transition-colors group-data-active:bg-white/20 group-data-active:text-white">
                                         {filter.count}
                                     </span>
                                 </TabsTrigger>
@@ -100,14 +100,14 @@ export default function Votespage() {
                         return (
                             <TabsContent key={filter.value} value={filter.value} className="mt-6">
                                 {filteredActivities.length === 0 ? (
-                                    <div className="rounded-lg border border-dashed bg-white p-10 text-center shadow-sm">
+                                    <div className="rounded-lg border border-dashed bg-white p-10 text-center shadow-[0_8px_24px_rgba(127,42,7,0.1)]">
                                         <p className="font-semibold text-foreground">No activities here</p>
                                         <p className="mt-1 text-sm text-muted-foreground">
                                             Les activites apparaitront ici quand elles correspondent a ce statut.
                                         </p>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                                         {filteredActivities.map((activity) => (
                                             <ActivityVoteCard
                                                 key={activity.id}

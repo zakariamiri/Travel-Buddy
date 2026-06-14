@@ -84,14 +84,14 @@ export default function ActivitiesPage() {
                     </header>
 
                     <section className="grid gap-4 md:grid-cols-3">
-                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                        <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                             <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                                 <CalendarDays className="size-5" />
                             </div>
                             <p className="mt-5 text-sm font-medium text-muted-foreground">Trip days</p>
                             <p className="mt-1 text-2xl font-bold text-foreground">{days}</p>
                         </div>
-                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                        <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                             <div className="flex size-11 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
                                 <Route className="size-5" />
                             </div>
@@ -100,7 +100,7 @@ export default function ActivitiesPage() {
                                 {activities.filter((activity) => activity.status === "approved").length}
                             </p>
                         </div>
-                        <div className="rounded-lg border bg-white p-5 shadow-sm">
+                        <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                             <div className="flex size-11 items-center justify-center rounded-lg bg-accent/20 text-[#9f411d]">
                                 <MapPinned className="size-5" />
                             </div>

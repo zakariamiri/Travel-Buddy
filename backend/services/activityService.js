@@ -80,20 +80,10 @@ async function createActivity(tripId, { title, type, location, notes, image_url,
         lon
     };
 
-    let { data: activity, error } = await supabase.from("trip_items")
+    const { data: activity, error } = await supabase.from("trip_items")
         .insert(payload)
         .select()
         .single();
-
-    if (error && error.code === "PGRST204" && error.message?.includes("price_per_person")) {
-        delete payload.price_per_person;
-        const retry = await supabase.from("trip_items")
-            .insert(payload)
-            .select()
-            .single();
-        activity = retry.data;
-        error = retry.error;
-    }
 
     if (error) {
         console.error("Error creating activity:", error);
@@ -131,16 +121,51 @@ async function deleteActivity(activityId) {
     }
     return activity;
 }
-async function castVote(activityId, userId, voteValue){
-    // Upsert vote: Update if it exists, insert if it doesn't
-    const { data, error } = await supabase
-        .from('activity_votes')
-        .upsert({ 
-            activity_id: activityId, 
-            user_id: userId, 
-            vote_value: voteValue 
-        }, { onConflict: 'activity_id,user_id' });
+async function castVote(tripId, activityId, userId, voteValue) {
+    const { data: membership, error: membershipError } = await supabase
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", tripId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
+    if (membershipError) throw membershipError;
+    if (!membership) throw new Error("FORBIDDEN");
+
+    const { data: activity, error: activityError } = await supabase
+        .from("trip_items")
+        .select("id")
+        .eq("id", activityId)
+        .eq("trip_id", tripId)
+        .maybeSingle();
+
+    if (activityError) throw activityError;
+    if (!activity) throw new Error("ACTIVITY_NOT_FOUND");
+
+    const { data: existingVotes, error: existingVoteError } = await supabase
+        .from("activity_votes")
+        .select("id")
+        .eq("activity_id", activityId)
+        .eq("user_id", userId)
+        .limit(1);
+
+    if (existingVoteError) throw existingVoteError;
+
+    const existingVote = existingVotes?.[0];
+    const query = existingVote
+        ? supabase
+            .from("activity_votes")
+            .update({ vote_value: voteValue })
+            .eq("id", existingVote.id)
+        : supabase
+            .from("activity_votes")
+            .insert({
+                activity_id: activityId,
+                user_id: userId,
+                vote_value: voteValue,
+            });
+
+    const { data, error } = await query.select().single();
     if (error) throw error;
     return data;
 };

@@ -34,7 +34,7 @@ export default function ActivityCard({ activity, onDelete }: { activity: Activit
   const Icon = typeToIcon[type] || FaCompass
 
   return (
-    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='z-50 w-full cursor-move rounded-lg border bg-white py-4 shadow-sm transition hover:shadow-md'  >
+    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='z-50 w-full cursor-move rounded-lg border bg-white py-4 shadow-[0_5px_16px_rgba(127,42,7,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_10px_24px_rgba(127,42,7,0.2)]'  >
       <CardContent className='px-4'>
         <div className='flex flex-row gap-4 items-start'>
           {/* Activity icon */}

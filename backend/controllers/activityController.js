@@ -74,10 +74,21 @@ async function voteActivity(req, res) {
           return res.status(400).json({ error: 'vote_value must be 1 or -1' });
       }
 
-      const result = await activityService.castVote(activityId, userId, voteValue);
+      const result = await activityService.castVote(
+          req.params.tripId,
+          activityId,
+          userId,
+          voteValue,
+      );
       res.status(200).json(result);
   } catch (error) {
       console.error('voteActivity error:', error);
+      if (error?.message === "FORBIDDEN") {
+          return res.status(403).json({ error: "Vous n'etes pas membre de ce voyage" });
+      }
+      if (error?.message === "ACTIVITY_NOT_FOUND") {
+          return res.status(404).json({ error: "Activite introuvable" });
+      }
       res.status(500).json({
           error: error?.message || 'Unknown error',
           code: error?.code,
