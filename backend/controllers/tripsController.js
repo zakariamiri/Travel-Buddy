@@ -13,7 +13,7 @@ async function getTrips(req, res) {
 
 async function getTripById(req, res) {
   try {
-    const trip = await tripsService.getTripById(req.params.id);
+    const trip = await tripsService.getTripById(req.params.id, req.user.id);
     if (!trip) {
       return res.status(404).json({ error: "Trip not found" });
     }

@@ -42,6 +42,32 @@ async function getMembersByTripIds(tripIds) {
     profilesById[profile.id] = profile;
   }
 
+  for (const member of memberRows || []) {
+    if (profilesById[member.user_id]) continue;
+
+    const { data: authUserData } = await supabase.auth.admin.getUserById(
+      member.user_id,
+    );
+    const authUser = authUserData?.user;
+
+    if (!authUser) continue;
+
+    profilesById[member.user_id] = {
+      id: member.user_id,
+      full_name:
+        authUser.user_metadata?.full_name ||
+        authUser.user_metadata?.name ||
+        authUser.email?.split("@")[0] ||
+        "User",
+      avatar_url: authUser.user_metadata?.avatar_url || null,
+      email: authUser.email || null,
+    };
+
+    await supabase.from("users").upsert(profilesById[member.user_id], {
+      onConflict: "id",
+    });
+  }
+
   const membersByTrip = {};
   for (const member of memberRows || []) {
     if (!membersByTrip[member.trip_id]) membersByTrip[member.trip_id] = [];
@@ -107,7 +133,7 @@ async function getTripsByUser(userId, filter = "all") {
   return result;
 }
 
-async function getTripById(tripId) {
+async function getTripById(tripId, userId) {
   const { data: trip, error: tripErr } = await supabase
     .from("trips")
     .select("*")
@@ -123,11 +149,26 @@ async function getTripById(tripId) {
   if (countErr) throw new Error(countErr.message);
 
   const membersByTrip = await getMembersByTripIds([tripId]);
+  const { data: currentMemberships, error: currentMembershipsErr } =
+    await supabase
+      .from("trip_members")
+      .select("role")
+      .eq("trip_id", tripId)
+      .eq("user_id", userId);
+
+  if (currentMembershipsErr) throw new Error(currentMembershipsErr.message);
+
+  const role =
+    (currentMemberships || []).find((membership) => membership.role === "owner")
+      ?.role ||
+    currentMemberships?.[0]?.role ||
+    "viewer";
 
   return {
     ...trip,
     membersCount: count ?? 0,
     members: membersByTrip[tripId] || [],
+    role,
   };
 }
 

@@ -12,6 +12,8 @@ interface TripContextType {
     activities: any[];
     loadingActivities: boolean;
     currentToken: string | null;
+    currentUserId: string | null;
+    canManageTrip: boolean;
     handleDelete: (activityId: string) => Promise<void>;
     handleActivitySuccess: () => void;
     handleDragEnd: (event: DragEndEvent) => Promise<void>;
@@ -24,14 +26,25 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     const id = Array.isArray(params.id) ? params.id[0] : (params.id as string);
     const [tripDetails, setTripDetails] = useState<Trip | null>(null);
     const [currentToken, setCurrentToken] = useState<string | null>(null);
+    const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [activities, setActivities] = useState<any[]>([]);
     const [loadingActivities, setLoadingActivities] = useState(false);
+    const canManageTrip = Boolean(
+        tripDetails?.role === 'owner' ||
+        tripDetails?.members?.some(
+            (member) => member.id === currentUserId && member.role === 'owner',
+        ),
+    );
 
     useEffect(() => {
         const getToken = async () => {
             const supabase = createClient();
-            const { data: { session } } = await supabase.auth.getSession();
+            const [{ data: { session } }, { data: userData }] = await Promise.all([
+                supabase.auth.getSession(),
+                supabase.auth.getUser(),
+            ]);
             setCurrentToken(session?.access_token || null);
+            setCurrentUserId(userData.user?.id || null);
         };
         getToken();
     }, []);
@@ -77,6 +90,11 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     }, [id, currentToken]);
 
     const handleDelete = async (activityId: string) => {
+        if (!canManageTrip) {
+            toast.error('Seul le owner peut supprimer une activité');
+            return;
+        }
+
         try {
             setActivities(prev => prev.filter(activity => activity.id !== activityId))
             const response = await fetch(apiUrl(`/api/trips/${id}/activities/${activityId}`), {
@@ -100,6 +118,8 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     };
 
     const handleDragEnd = async (event: DragEndEvent) => {
+        if (!canManageTrip) return;
+
         const { active, over } = event;
         if (!over) return;
         const activityId = active.id as string;
@@ -136,6 +156,8 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
             activities,
             loadingActivities,
             currentToken,
+            currentUserId,
+            canManageTrip,
             handleDelete,
             handleActivitySuccess,
             handleDragEnd

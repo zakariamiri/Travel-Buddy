@@ -8,12 +8,13 @@ import { Activity, ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
 import { useDraggable } from '@dnd-kit/core';
 
-export default function ActivityCard({ activity, onDelete }: { activity: Activity; onDelete: () => void }) {
+export default function ActivityCard({ activity, onDelete, canEdit = false }: { activity: Activity; onDelete: () => void; canEdit?: boolean }) {
   const scheduledTime = (activity.scheduled_time || '').slice(0, 5)
 
   const {attributes, listeners, setNodeRef, transform} = useDraggable({
     id: activity.id,
-    data: { activity }
+    data: { activity },
+    disabled: !canEdit,
   });
 
   const style = transform ? {
@@ -34,7 +35,13 @@ export default function ActivityCard({ activity, onDelete }: { activity: Activit
   const Icon = typeToIcon[type] || FaCompass
 
   return (
-    <Card ref={setNodeRef} style={style} {...attributes} {...listeners} className='z-50 w-full cursor-move rounded-lg border bg-white py-4 shadow-sm transition hover:shadow-md'  >
+    <Card
+      ref={setNodeRef}
+      style={style}
+      {...(canEdit ? attributes : {})}
+      {...(canEdit ? listeners : {})}
+      className={`z-50 w-full rounded-lg border bg-white py-4 shadow-sm transition hover:shadow-md ${canEdit ? 'cursor-move' : ''}`}
+    >
       <CardContent className='px-4'>
         <div className='flex flex-row gap-4 items-start'>
           {/* Activity icon */}
@@ -52,20 +59,22 @@ export default function ActivityCard({ activity, onDelete }: { activity: Activit
           </div>
 
           {/* Menu */}
-          <DropdownMenu>
-            <DropdownMenuTrigger className='h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0'>
-              <FiMoreHorizontal />
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              <DropdownMenuItem 
-                onClick={onDelete}
-                className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'
-              >
-                <CiTrash className='mr-2' />
-                Delete
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {canEdit && (
+            <DropdownMenu>
+              <DropdownMenuTrigger className='h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0'>
+                <FiMoreHorizontal />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  onClick={onDelete}
+                  className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'
+                >
+                  <CiTrash className='mr-2' />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
       </CardContent>
     </Card>
