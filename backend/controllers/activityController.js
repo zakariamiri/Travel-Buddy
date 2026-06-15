@@ -75,7 +75,6 @@ async function voteActivity(req, res) {
       }
 
       const result = await activityService.castVote(
-          req.params.tripId,
           activityId,
           userId,
           voteValue,

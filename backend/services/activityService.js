@@ -121,7 +121,6 @@ async function deleteActivity(activityId) {
     }
     return activity;
 }
-
 async function castVote(activityId, userId, voteValue) {
     // Get trip_id from the activity
     const { data: activity, error: activityError } = await supabase

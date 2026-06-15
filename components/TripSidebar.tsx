@@ -236,7 +236,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                     priority
                                     unoptimized
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-[#4f1b09]/90 via-[#4f1b09]/25 to-transparent" />
+                                <div className="absolute inset-0 bg-linear-to-t from-[#4f1b09]/90 via-[#4f1b09]/25 to-transparent" />
                                 <div className='absolute bottom-3 left-3 right-3 flex flex-col gap-2 text-white'>
                                     <div className='min-w-0'>
                                         <h2 className='line-clamp-2 text-base font-bold leading-tight'>{tripDetails.name}</h2>
