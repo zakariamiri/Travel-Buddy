@@ -122,6 +122,67 @@ async function deleteActivity(activityId) {
     return activity;
 }
 async function castVote(activityId, userId, voteValue) {
+    // Get trip_id from the activity
+    const { data: activity, error: activityError } = await supabase
+        .from("trip_items")
+        .select("trip_id")
+        .eq("id", activityId)
+        .single();
+
+    if (activityError) throw activityError;
+    if (!activity) throw new Error("ACTIVITY_NOT_FOUND");
+
+    const tripId = activity.trip_id;
+
+    // Verify user is a member of the trip
+    const { data: membership, error: membershipError } = await supabase
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", tripId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    if (membershipError) throw membershipError;
+    if (!membership) throw new Error("FORBIDDEN");
+
+    const { error: voteError } = await supabase
+        .from("activity_votes")
+        .upsert(
+            { activity_id: activityId, user_id: userId, vote_value: voteValue },
+            { onConflict: "activity_id,user_id" }
+        );
+
+    if (voteError) throw voteError;
+
+    const membersCount = await getMembersCount(tripId);
+
+    const [{ count: likesCount }, { count: dislikesCount }] = await Promise.all([
+        supabase
+            .from("activity_votes")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_id", activityId)
+            .eq("vote_value", 1),
+
+        supabase
+            .from("activity_votes")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_id", activityId)
+            .eq("vote_value", -1),
+    ]);
+
+    let newStatus = 'pending';
+    if (likesCount >= Math.ceil(membersCount / 2)) {
+        newStatus = 'approved';
+    } else if (dislikesCount >= Math.ceil(membersCount / 2)) {
+        newStatus = 'rejected';
+    }
+
+    if (newStatus !== 'pending') {
+        await supabase
+            .from("trip_items")
+            .update({ status: newStatus })
+            .eq("id", activityId);
+    }
   const { error: voteError } = await supabase
     .from("activity_votes")
     .upsert(
