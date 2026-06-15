@@ -21,8 +21,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Travel Buddy",
-  description: "Travel Buddy App Dashboard",
+  title: "Travel-Buddy | Plan Trips Together",
+  description:
+    "Plan group trips, vote on activities, manage budgets and track expenses with Travel-Buddy.",
 };
 
 export default function RootLayout({

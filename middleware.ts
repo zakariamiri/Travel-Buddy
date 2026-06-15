@@ -5,6 +5,7 @@ export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const publicRoutes = [
+    "/",
     "/login",
     "/signup",
     "/auth/callback",
@@ -14,7 +15,7 @@ export async function middleware(request: NextRequest) {
     "/api/send-reset-email",
   ];
   const isPublicRoute = publicRoutes.some((route) =>
-    pathname.startsWith(route),
+    route === "/" ? pathname === "/" : pathname.startsWith(route),
   );
 
   const supabaseResponse = NextResponse.next({
@@ -62,5 +63,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
 };
