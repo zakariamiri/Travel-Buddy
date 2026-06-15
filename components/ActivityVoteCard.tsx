@@ -48,8 +48,7 @@ export default function ActivityVoteCard({ activity, tripId,membersCount,onSucce
 
             if (!res.ok) throw new Error('Failed to submit vote');
             toast.success('Vote recorded!');
-<<<<<<< HEAD
-            onSuccess() // Call the success callback
+            onSuccess()
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : 'Error recording vote.';
             toast.error(errorMessage);

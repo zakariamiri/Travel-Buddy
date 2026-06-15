@@ -64,7 +64,21 @@ async function getActivitiesByTrip(tripId, userId) {
     }));
 }
 
-async function createActivity(tripId, { title, type, location, notes, image_url, scheduled_time, scheduled_date,  status = 'pending', price_per_person, lat, lon }) {
+async function assertTripOwner(tripId, userId) {
+    const { data: memberships, error } = await supabase
+        .from("trip_members")
+        .select("role")
+        .eq("trip_id", tripId)
+        .eq("user_id", userId);
+
+    if (error || !(memberships || []).some((membership) => membership.role === "owner")) {
+        throw new Error("FORBIDDEN");
+    }
+}
+
+async function createActivity(tripId, userId, { title, type, location, notes, image_url, scheduled_time, scheduled_date,  status = 'pending', price_per_person, lat, lon }) {
+    await assertTripOwner(tripId, userId);
+
     const payload = {
         trip_id: tripId,
         title,
@@ -93,13 +107,16 @@ async function createActivity(tripId, { title, type, location, notes, image_url,
 }
 
 
-async function updateActivity(activityId, { scheduled_date }) {
+async function updateActivity(tripId, activityId, userId, { scheduled_date }) {
+    await assertTripOwner(tripId, userId);
+
     const { data: activity, error } = await supabase.from("trip_items")
         .update({
     
             scheduled_date
         })
         .eq("id", activityId)
+        .eq("trip_id", tripId)
         .select()
         .single();
     if (error) {
@@ -109,10 +126,13 @@ async function updateActivity(activityId, { scheduled_date }) {
     return activity;
 }
 
-async function deleteActivity(activityId) {
+async function deleteActivity(tripId, activityId, userId) {
+    await assertTripOwner(tripId, userId);
+
     const { data: activity, error } = await supabase.from("trip_items")
         .delete()
         .eq("id", activityId)
+        .eq("trip_id", tripId)
         .select()
         .single();
     if (error) {

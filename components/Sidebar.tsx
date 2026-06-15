@@ -98,6 +98,7 @@ export default function Sidebar() {
 
       {/* Explore */}
       <Button
+        onClick={() => router.push("/explore")}
         variant="ghost"
         className="group justify-start gap-4 text-base rounded-md px-3 py-6 
                     bg-transparent text-gray-800

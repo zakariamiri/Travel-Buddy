@@ -21,7 +21,8 @@ export default function ActivitiesPage() {
         activities, 
         handleDelete, 
         handleActivitySuccess, 
-        handleDragEnd 
+        handleDragEnd,
+        canManageTrip,
     } = useTripContext();
 
     const sensors = useSensors(
@@ -125,18 +126,20 @@ export default function ActivitiesPage() {
                                         title={`Day ${i + 1}`}
                                         subtitle={getDateFromIndex(tripDetails?.start_date || '', i).toLocaleString('en-US', { month: 'long', day: 'numeric' })}
                                         modalTrigger={
-                                            <AddActivityModal
-                                                tripId={id}
-                                                tripStartDate={dayDateString}
-                                                tripEndDate={tripDetails?.end_date}
-                                                trigger={
-                                                    <button className='mt-3 flex h-28 w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d8bda7] bg-[#fff8ec] text-[#9f411d] transition-colors hover:bg-sidebar'>
-                                                        <Plus className="size-6" />
-                                                        <span className='text-sm font-semibold'>Add Activity</span>
-                                                    </button>
-                                                }
-                                                onSuccess={handleActivitySuccess}
-                                            />
+                                            canManageTrip ? (
+                                                <AddActivityModal
+                                                    tripId={id}
+                                                    tripStartDate={dayDateString}
+                                                    tripEndDate={tripDetails?.end_date}
+                                                    trigger={
+                                                        <button className='mt-3 flex h-28 w-full flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-[#d8bda7] bg-[#fff8ec] text-[#9f411d] transition-colors hover:bg-sidebar'>
+                                                            <Plus className="size-6" />
+                                                            <span className='text-sm font-semibold'>Add Activity</span>
+                                                        </button>
+                                                    }
+                                                    onSuccess={handleActivitySuccess}
+                                                />
+                                            ) : null
                                         }
                                     >
                                         {dayActivities.map((activity) => (
@@ -144,6 +147,7 @@ export default function ActivitiesPage() {
                                                 key={activity.id}
                                                 activity={activity}
                                                 onDelete={() => handleDelete(activity.id)}
+                                                canEdit={canManageTrip}
                                             />
                                         ))}
                                     </DayColumn>

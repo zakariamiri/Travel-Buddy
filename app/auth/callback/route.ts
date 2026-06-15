@@ -12,7 +12,6 @@ export async function GET(request: NextRequest) {
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  // PKCE flow (code)
   if (code) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
@@ -20,7 +19,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // Token hash flow (generateLink)
   if (token_hash && type) {
     const { error } = await supabase.auth.verifyOtp({
       token_hash,
