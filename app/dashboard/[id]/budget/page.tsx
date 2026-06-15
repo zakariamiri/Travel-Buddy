@@ -9,12 +9,14 @@ import {
   CircleDollarSign,
   Coins,
   CreditCard,
-  Landmark,
+  Pencil,
   Plus,
   ReceiptText,
+  Trash2,
   Users,
   WalletCards,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { useTripContext } from '@/components/TripProvider'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -27,15 +29,24 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { apiUrl } from '@/lib/api'
+import { ACTIVITY_TYPES } from '@/types/types'
 
 type Expense = {
   id: string
   title: string
   amount: number
-  paidById: string
+  paidById: string | null
   paidByName: string
   category: string
   date: string
+  splitBetween: string[]
+}
+
+type Settlement = {
+  id: string
+  paid_by: string
+  paid_to: string
+  amount: number
 }
 
 type Member = {
@@ -47,6 +58,8 @@ type Member = {
 const currencyFormatter = new Intl.NumberFormat('fr-MA', {
   maximumFractionDigits: 0,
 })
+
+const SHARED_PAYMENT_VALUE = 'all-members-paid'
 
 function formatMoney(value: number) {
   return `${currencyFormatter.format(Math.max(0, value))} DH`
@@ -61,7 +74,13 @@ export default function BudgetPage() {
   const { activities, currentToken, tripDetails } = useTripContext()
   const membersCount = Math.max(1, tripDetails?.membersCount ?? 4)
   const [expenses, setExpenses] = useState<Expense[]>([])
+  const [settlements, setSettlements] = useState<Settlement[]>([])
+  const [settlementsAvailable, setSettlementsAvailable] = useState(true)
   const [savingExpense, setSavingExpense] = useState(false)
+  const [editingExpenseId, setEditingExpenseId] = useState<string | null>(null)
+  const [savingBudget, setSavingBudget] = useState(false)
+  const [budgetOverride, setBudgetOverride] = useState<number | null>(null)
+  const [budgetInput, setBudgetInput] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     title: '',
     amount: '',
@@ -108,7 +127,9 @@ export default function BudgetPage() {
   }, [activities, membersCount])
 
   const selectedPaidBy = formData.paidBy || members[0]?.id || ''
-  const selectedPaidByName = members.find((member) => member.id === selectedPaidBy)?.name || 'Select member'
+  const selectedPaidByName = selectedPaidBy === SHARED_PAYMENT_VALUE
+    ? 'Tous ont paye leur part'
+    : members.find((member) => member.id === selectedPaidBy)?.name || 'Select member'
   const customCategories = ['Food', 'Transport', 'Hotel', 'Shopping', 'Other']
 
   useEffect(() => {
@@ -127,47 +148,107 @@ export default function BudgetPage() {
           id: expense.id,
           title: expense.label || expense.title,
           amount: toNumber(expense.amount),
-          paidById: expense.paid_by || expense.paidBy,
-          paidByName: memberNameById[expense.paid_by || expense.paidBy] || 'Member',
+          paidById: expense.paid_by || expense.paidBy || null,
+          paidByName: expense.paid_by || expense.paidBy
+            ? memberNameById[expense.paid_by || expense.paidBy] || 'Member'
+            : 'Tous les membres',
           category: expense.category || 'General',
           date: expense.date,
+          splitBetween: Array.isArray(expense.split_between) ? expense.split_between : [],
         }))
         setExpenses(normalizedExpenses)
       } catch (error) {
         console.error('Error fetching expenses:', error)
+        toast.error('Impossible de charger les depenses')
       }
     }
 
     fetchExpenses()
   }, [currentToken, memberNameById, tripDetails?.id])
 
+  useEffect(() => {
+    const fetchSettlements = async () => {
+      if (!tripDetails?.id || !currentToken) return
+
+      try {
+        const response = await fetch(
+          apiUrl(`/api/trips/${tripDetails.id}/expenses/settlements/list`),
+          { headers: { Authorization: `Bearer ${currentToken}` } },
+        )
+        const data = await response.json()
+        if (response.status === 503 && data.code === 'SETTLEMENTS_NOT_CONFIGURED') {
+          setSettlementsAvailable(false)
+          setSettlements([])
+          return
+        }
+        if (!response.ok) throw new Error(data.error || 'Failed to fetch settlements')
+        setSettlementsAvailable(true)
+        setSettlements(Array.isArray(data) ? data : [])
+      } catch (error) {
+        console.error('Error fetching settlements:', error)
+        toast.error('Impossible de charger les reglements')
+      }
+    }
+
+    fetchSettlements()
+  }, [currentToken, tripDetails?.id])
+
   const estimatedTotal = activityRows.reduce((sum, activity) => sum + activity.total, 0)
   const spentTotal = expenses.reduce((sum, expense) => sum + expense.amount, 0)
-  const budgetTotal = toNumber(tripDetails?.budget_total ?? tripDetails?.budget, 5000)
+  const budgetTotal = budgetOverride ?? toNumber(tripDetails?.budget_total ?? tripDetails?.budget)
+  const canEditBudget = ['owner', 'admin'].includes(tripDetails?.role || '')
   const remainingBudget = Math.max(0, budgetTotal - spentTotal)
   const progressValue = Math.min(100, Math.round((spentTotal / Math.max(1, budgetTotal)) * 100))
-  const mainPayer = expenses.reduce<Record<string, number>>((acc, expense) => {
-    acc[expense.paidById] = (acc[expense.paidById] || 0) + expense.amount
-    return acc
-  }, {})
   const balanceMembers = members.length ? members : [{ id: 'unknown', name: 'Member' }]
-  const sharePerMember = spentTotal / balanceMembers.length
   const balances = (() => {
+    const netByMember = balanceMembers.reduce<Record<string, number>>((acc, member) => {
+      acc[member.id] = 0
+      return acc
+    }, {})
+
+    expenses.forEach((expense) => {
+      if (!expense.paidById) return
+
+      const splitIds = expense.splitBetween.length
+        ? expense.splitBetween.filter((id) => id in netByMember)
+        : balanceMembers.map((member) => member.id)
+      if (!splitIds.length) return
+
+      netByMember[expense.paidById] = (netByMember[expense.paidById] || 0) + expense.amount
+      const share = expense.amount / splitIds.length
+      splitIds.forEach((memberId) => {
+        netByMember[memberId] = (netByMember[memberId] || 0) - share
+      })
+    })
+
+    settlements.forEach((settlement) => {
+      netByMember[settlement.paid_by] =
+        (netByMember[settlement.paid_by] || 0) + toNumber(settlement.amount)
+      netByMember[settlement.paid_to] =
+        (netByMember[settlement.paid_to] || 0) - toNumber(settlement.amount)
+    })
+
     const debtors = balanceMembers
       .map((member) => ({
         ...member,
-        amount: sharePerMember - (mainPayer[member.id] || 0),
+        amount: -(netByMember[member.id] || 0),
       }))
       .filter((member) => member.amount > 0.5)
       .sort((a, b) => b.amount - a.amount)
     const creditors = balanceMembers
       .map((member) => ({
         ...member,
-        amount: (mainPayer[member.id] || 0) - sharePerMember,
+        amount: netByMember[member.id] || 0,
       }))
       .filter((member) => member.amount > 0.5)
       .sort((a, b) => b.amount - a.amount)
-    const transfers: Array<{ from: string; to: string; amount: number }> = []
+    const transfers: Array<{
+      fromId: string
+      from: string
+      toId: string
+      to: string
+      amount: number
+    }> = []
 
     debtors.forEach((debtor) => {
       let remaining = debtor.amount
@@ -175,9 +256,11 @@ export default function BudgetPage() {
         if (remaining <= 0.5 || creditor.amount <= 0.5) return
         const amount = Math.min(remaining, creditor.amount)
         transfers.push({
+          fromId: debtor.id,
           from: debtor.name,
+          toId: creditor.id,
           to: creditor.name,
-          amount: Math.round(amount),
+          amount: Math.round(amount * 100) / 100,
         })
         remaining -= amount
         creditor.amount -= amount
@@ -187,15 +270,151 @@ export default function BudgetPage() {
     return transfers
   })()
 
-  const handleAddExpense = async (event: React.FormEvent) => {
+  const handleSaveBudget = async () => {
+    const amount = Number(budgetInput ?? budgetTotal)
+    if (!canEditBudget) {
+      toast.error('Seul l’admin du voyage peut modifier le budget')
+      return
+    }
+    if (!tripDetails?.id || !currentToken || !Number.isFinite(amount) || amount < 0) {
+      toast.error('Entrez un budget valide')
+      return
+    }
+
+    setSavingBudget(true)
+    try {
+      const response = await fetch(apiUrl(`/api/trips/${tripDetails.id}/budget`), {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+        body: JSON.stringify({ budget_total: amount }),
+      })
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Failed to update budget')
+      setBudgetOverride(toNumber(result.budget_total))
+      setBudgetInput(String(toNumber(result.budget_total)))
+      toast.success('Budget mis a jour')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de modifier le budget')
+    } finally {
+      setSavingBudget(false)
+    }
+  }
+
+  const handleDeleteExpense = async (expenseId: string) => {
+    if (!tripDetails?.id || !currentToken) return
+
+    try {
+      const response = await fetch(
+        apiUrl(`/api/trips/${tripDetails.id}/expenses/${expenseId}`),
+        {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${currentToken}` },
+        },
+      )
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Failed to delete expense')
+      setExpenses((current) => current.filter((expense) => expense.id !== expenseId))
+      if (editingExpenseId === expenseId) {
+        cancelExpenseEdit()
+      }
+      toast.success('Depense supprimee')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de supprimer la depense')
+    }
+  }
+
+  const handleMarkAsPaid = async (balance: (typeof balances)[number]) => {
+    if (!tripDetails?.id || !currentToken || !settlementsAvailable) return
+
+    try {
+      const response = await fetch(
+        apiUrl(`/api/trips/${tripDetails.id}/expenses/settlements`),
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${currentToken}`,
+          },
+          body: JSON.stringify({
+            paid_by: balance.fromId,
+            paid_to: balance.toId,
+            amount: balance.amount,
+          }),
+        },
+      )
+      const result = await response.json()
+      if (!response.ok) throw new Error(result.error || 'Failed to create settlement')
+      setSettlements((current) => [result, ...current])
+      toast.success('Paiement marque comme effectue')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Impossible de confirmer le paiement')
+    }
+  }
+
+  const handleCategoryChange = (value: string) => {
+    const selectedActivity = activityRows.find(
+      (activity) => `Activity: ${activity.title}` === value,
+    )
+
+    setFormData((current) => ({
+      ...current,
+      category: value,
+      amount: selectedActivity ? String(selectedActivity.total) : '',
+    }))
+  }
+
+  const cancelExpenseEdit = () => {
+    setEditingExpenseId(null)
+    setFormData({
+      title: '',
+      amount: '',
+      paidBy: '',
+      category: 'Activity',
+      date: new Date().toISOString().split('T')[0],
+    })
+  }
+
+  const startExpenseEdit = (expense: Expense) => {
+    setEditingExpenseId(expense.id)
+    setFormData({
+      title: expense.title,
+      amount: String(expense.amount),
+      paidBy: expense.paidById || SHARED_PAYMENT_VALUE,
+      category: expense.category,
+      date: expense.date,
+    })
+  }
+
+  const handleSaveExpense = async (event: React.FormEvent) => {
     event.preventDefault()
     const amount = Number(formData.amount)
-    if (!formData.title || !Number.isFinite(amount) || amount <= 0 || !selectedPaidBy || !tripDetails?.id || !currentToken) return
+    if (!formData.title.trim()) {
+      toast.error('Ajoutez un titre pour la depense')
+      return
+    }
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error('Entrez un montant superieur a 0')
+      return
+    }
+    if (!selectedPaidBy) {
+      toast.error('Selectionnez le membre qui a paye')
+      return
+    }
+    if (!tripDetails?.id || !currentToken) {
+      toast.error('La session ou le voyage n’est pas encore charge')
+      return
+    }
 
     setSavingExpense(true)
     try {
-      const response = await fetch(apiUrl(`/api/trips/${tripDetails.id}/expenses`), {
-        method: 'POST',
+      const endpoint = editingExpenseId
+        ? `/api/trips/${tripDetails.id}/expenses/${editingExpenseId}`
+        : `/api/trips/${tripDetails.id}/expenses`
+      const response = await fetch(apiUrl(endpoint), {
+        method: editingExpenseId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${currentToken}`,
@@ -203,30 +422,42 @@ export default function BudgetPage() {
         body: JSON.stringify({
           label: formData.title,
           amount,
-          paid_by: selectedPaidBy,
+          paid_by: selectedPaidBy === SHARED_PAYMENT_VALUE ? null : selectedPaidBy,
+          shared_payment: selectedPaidBy === SHARED_PAYMENT_VALUE,
           category: formData.category,
           date: formData.date,
           split_between: members.map((member) => member.id),
         }),
       })
-      if (!response.ok) throw new Error('Failed to create expense')
       const expense = await response.json()
+      if (!response.ok) throw new Error(expense.error || 'Failed to create expense')
 
-      setExpenses((current) => [
-        {
-          id: expense.id,
-          title: expense.label || expense.title,
-          amount: toNumber(expense.amount),
-          paidById: expense.paid_by || expense.paidBy,
-          paidByName: memberNameById[expense.paid_by || expense.paidBy] || 'Member',
-          category: expense.category || formData.category,
-          date: expense.date,
-        },
-        ...current,
-      ])
-      setFormData((current) => ({ ...current, title: '', amount: '' }))
+      const normalizedExpense: Expense = {
+        id: expense.id,
+        title: expense.label || expense.title,
+        amount: toNumber(expense.amount),
+        paidById: expense.paid_by || expense.paidBy || null,
+        paidByName: expense.paid_by || expense.paidBy
+          ? memberNameById[expense.paid_by || expense.paidBy] || 'Member'
+          : 'Tous les membres',
+        category: expense.category || formData.category,
+        date: expense.date,
+        splitBetween: Array.isArray(expense.split_between) ? expense.split_between : [],
+      }
+
+      setExpenses((current) =>
+        editingExpenseId
+          ? current.map((item) =>
+              item.id === editingExpenseId ? normalizedExpense : item,
+            )
+          : [normalizedExpense, ...current],
+      )
+      const wasEditing = Boolean(editingExpenseId)
+      cancelExpenseEdit()
+      toast.success(wasEditing ? 'Depense modifiee' : 'Depense ajoutee')
     } catch (error) {
       console.error('Error creating expense:', error)
+      toast.error(error instanceof Error ? error.message : 'Impossible d’ajouter la depense')
     } finally {
       setSavingExpense(false)
     }
@@ -307,6 +538,35 @@ export default function BudgetPage() {
               style={{ width: `${progressValue}%` }}
             />
           </div>
+          <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-end">
+            <div className="flex-1">
+              <Label htmlFor="trip-budget">Budget total (DH)</Label>
+              <Input
+                id="trip-budget"
+                type="number"
+                min="0"
+                value={budgetInput ?? (budgetTotal || '')}
+                onChange={(event) => setBudgetInput(event.target.value)}
+                placeholder="5000"
+                className="mt-2 bg-white"
+                disabled={!canEditBudget}
+              />
+            </div>
+            <Button
+              type="button"
+              onClick={handleSaveBudget}
+              disabled={savingBudget || !canEditBudget}
+              className="bg-primary text-white hover:bg-primary/90"
+            >
+              <Pencil className="size-4" />
+              {savingBudget ? 'Saving...' : 'Update budget'}
+            </Button>
+          </div>
+          {!canEditBudget && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Seul l’admin du voyage peut modifier le budget total.
+            </p>
+          )}
         </section>
 
         <section className="grid gap-6 xl:grid-cols-[1.35fr_0.65fr]">
@@ -334,32 +594,38 @@ export default function BudgetPage() {
                   <div className="p-6 text-center text-sm text-muted-foreground">
                     Aucune activite disponible pour estimer le budget.
                   </div>
-                ) : activityRows.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="grid gap-3 px-4 py-4 transition hover:bg-sidebar/30 md:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr] md:items-center"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                        <Landmark className="size-5" />
+                ) : activityRows.map((activity) => {
+                  const ActivityIcon =
+                    ACTIVITY_TYPES.find((type) => type.value === activity.type)?.icon ||
+                    CircleDollarSign
+
+                  return (
+                    <div
+                      key={activity.id}
+                      className="grid gap-3 px-4 py-4 transition hover:bg-sidebar/30 md:grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr] md:items-center"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <ActivityIcon className="size-5" />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{activity.title}</p>
+                          <p className="text-xs text-muted-foreground">{activity.location || activity.type}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{activity.title}</p>
-                        <p className="text-xs text-muted-foreground">{activity.location || activity.type}</p>
-                      </div>
+                      <span className="rounded-full bg-accent/20 px-3 py-1 text-sm font-semibold text-[#8a3412] md:w-fit">
+                        {formatMoney(activity.pricePerPerson)}
+                      </span>
+                      <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
+                        <Users className="size-4 text-secondary" />
+                        {activity.participantCount} participants
+                      </span>
+                      <span className="text-left text-lg font-bold text-foreground md:text-right">
+                        {formatMoney(activity.total)}
+                      </span>
                     </div>
-                    <span className="rounded-full bg-accent/20 px-3 py-1 text-sm font-semibold text-[#8a3412] md:w-fit">
-                      {formatMoney(activity.pricePerPerson)}
-                    </span>
-                    <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
-                      <Users className="size-4 text-secondary" />
-                      {activity.participantCount} participants
-                    </span>
-                    <span className="text-left text-lg font-bold text-foreground md:text-right">
-                      {formatMoney(activity.total)}
-                    </span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </div>
@@ -367,13 +633,18 @@ export default function BudgetPage() {
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <h2 className="text-xl font-bold text-foreground">Member Balances</h2>
             <p className="mb-5 text-sm text-muted-foreground">Qui doit payer et qui doit recevoir.</p>
+            {!settlementsAvailable && (
+              <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+                Creez la table expense_settlements dans Supabase pour activer les reglements.
+              </div>
+            )}
             <div className="space-y-3">
               {balances.length === 0 ? (
                 <div className="rounded-lg border border-dashed bg-sidebar/30 p-5 text-center text-sm text-muted-foreground">
                   Aucun solde a regler pour le moment.
                 </div>
               ) : balances.map((balance) => (
-                <div key={`${balance.from}-${balance.to}`} className="rounded-lg border bg-white p-4">
+                <div key={`${balance.fromId}-${balance.toId}`} className="rounded-lg border bg-white p-4">
                   <div className="flex items-start gap-3">
                     <ArrowUpRight className="mt-1 size-5 text-primary" />
                     <div className="flex-1">
@@ -383,7 +654,12 @@ export default function BudgetPage() {
                       <p className="text-xs text-muted-foreground">Split automatique des depenses reelles.</p>
                     </div>
                   </div>
-                  <Button className="mt-3 w-full bg-primary text-white hover:bg-primary/90">
+                  <Button
+                    type="button"
+                    onClick={() => handleMarkAsPaid(balance)}
+                    disabled={!settlementsAvailable}
+                    className="mt-3 w-full bg-primary text-white hover:bg-primary/90"
+                  >
                     <CheckCircle2 className="size-4" />
                     Mark as paid
                   </Button>
@@ -394,14 +670,18 @@ export default function BudgetPage() {
         </section>
 
         <section className="grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
-          <form onSubmit={handleAddExpense} className="rounded-lg border bg-white p-5 shadow-sm">
+          <form onSubmit={handleSaveExpense} className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
                 <Plus className="size-5" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-foreground">Real Expenses</h2>
-                <p className="text-sm text-muted-foreground">Ajouter une depense reelle.</p>
+                <h2 className="text-xl font-bold text-foreground">
+                  {editingExpenseId ? 'Update Expense' : 'Real Expenses'}
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  {editingExpenseId ? 'Modifier la depense selectionnee.' : 'Ajouter une depense reelle.'}
+                </p>
               </div>
             </div>
 
@@ -450,6 +730,13 @@ export default function BudgetPage() {
                       </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
+                      <SelectItem value={SHARED_PAYMENT_VALUE}>
+                        <span className="flex items-center gap-2">
+                          <Users className="size-4 text-secondary" />
+                          <span>Tous ont paye leur part</span>
+                        </span>
+                      </SelectItem>
+                      <div className="my-1 border-t" />
                       {members.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">
                           Aucun membre disponible
@@ -469,7 +756,10 @@ export default function BudgetPage() {
                 </div>
                 <div>
                   <Label>Categorie</Label>
-                  <Select value={formData.category} onValueChange={(value) => setFormData((current) => ({ ...current, category: value || current.category }))}>
+                  <Select
+                    value={formData.category}
+                    onValueChange={(value) => value && handleCategoryChange(value)}
+                  >
                     <SelectTrigger className="mt-2 w-full bg-white">
                       <SelectValue />
                     </SelectTrigger>
@@ -496,10 +786,29 @@ export default function BudgetPage() {
                   </Select>
                 </div>
               </div>
-              <Button disabled={savingExpense} className="bg-primary text-white hover:bg-primary/90">
-                <ReceiptText className="size-4" />
-                {savingExpense ? 'Saving...' : 'Add expense'}
-              </Button>
+              <div className="flex gap-2">
+                <Button
+                  type="submit"
+                  disabled={savingExpense}
+                  className="flex-1 bg-primary text-white hover:bg-primary/90"
+                >
+                  <ReceiptText className="size-4" />
+                  {savingExpense
+                    ? 'Saving...'
+                    : editingExpenseId
+                      ? 'Update expense'
+                      : 'Add expense'}
+                </Button>
+                {editingExpenseId && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={cancelExpenseEdit}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </div>
             </div>
           </form>
 
@@ -529,11 +838,33 @@ export default function BudgetPage() {
                       <p className="font-semibold text-foreground">{expense.title}</p>
                       <p className="flex items-center gap-2 text-xs text-muted-foreground">
                         <CalendarDays className="size-3.5" />
-                        {expense.date} - {expense.category} - paid by {expense.paidByName}
+                        {expense.date} - {expense.category} - paye par {expense.paidByName}
                       </p>
                     </div>
                   </div>
-                  <p className="text-lg font-bold text-foreground">{formatMoney(expense.amount)}</p>
+                  <div className="flex items-center justify-between gap-3 sm:justify-end">
+                    <p className="text-lg font-bold text-foreground">{formatMoney(expense.amount)}</p>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => startExpenseEdit(expense)}
+                      title="Modifier la depense"
+                      className="text-primary hover:bg-primary/10 hover:text-primary"
+                    >
+                      <Pencil className="size-4" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDeleteExpense(expense.id)}
+                      title="Supprimer la depense"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <Trash2 className="size-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>

@@ -46,9 +46,9 @@ export default function AddActivityModal({
           </Button>
         </DialogTrigger>
       )}
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[calc(100vw-2rem)] max-h-[calc(100dvh-2rem)] !max-w-[850px] overflow-y-auto rounded-xl p-5 md:overflow-visible md:p-6">
         <DialogHeader>
-          <DialogTitle>Add New Activity</DialogTitle>
+          <DialogTitle className="text-xl font-bold">Add New Activity</DialogTitle>
         </DialogHeader>
         <AddActivityForm
           tripId={tripId}

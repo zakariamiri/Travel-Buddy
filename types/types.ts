@@ -17,6 +17,7 @@ export default interface Trip {
     membersCount: number; 
     budget_total?: number | null;
     budget?: number | null;
+    role?: string | null;
     members?: Array<{
       id?: string;
       full_name?: string | null;

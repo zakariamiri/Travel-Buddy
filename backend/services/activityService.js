@@ -80,20 +80,10 @@ async function createActivity(tripId, { title, type, location, notes, image_url,
         lon
     };
 
-    let { data: activity, error } = await supabase.from("trip_items")
+    const { data: activity, error } = await supabase.from("trip_items")
         .insert(payload)
         .select()
         .single();
-
-    if (error && error.code === "PGRST204" && error.message?.includes("price_per_person")) {
-        delete payload.price_per_person;
-        const retry = await supabase.from("trip_items")
-            .insert(payload)
-            .select()
-            .single();
-        activity = retry.data;
-        error = retry.error;
-    }
 
     if (error) {
         console.error("Error creating activity:", error);
