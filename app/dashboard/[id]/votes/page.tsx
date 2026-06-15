@@ -5,11 +5,13 @@ import { useTripContext } from "@/components/TripProvider";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, Clock3, ThumbsUp, XCircle } from "lucide-react";
 import { useParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 
 export default function Votespage() {
     const params = useParams();
     const tripId = Array.isArray(params.id) ? params.id[0] : (params.id as string);
+    const router = useRouter()
 
     const {
         activities,
@@ -114,6 +116,7 @@ export default function Votespage() {
                                                 activity={activity}
                                                 tripId={tripId}
                                                 membersCount={tripDetails?.membersCount ?? 0}
+                                                onSuccess={() => router.refresh()} // Refresh parent data after voting
                                             />
                                         ))}
                                     </div>

@@ -111,6 +111,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                 const text = await res.text();
                 const data = text ? JSON.parse(text) : [];
                 setMembers(Array.isArray(data) ? data : []);
+                console.log('Fetched members:', data);
             } catch (err) {
                 console.error('Error fetching trip members:', err);
             }

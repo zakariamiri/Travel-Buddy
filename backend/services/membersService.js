@@ -124,7 +124,6 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
-
 module.exports = {
   generateInviteCode,
   getInviteCode,
