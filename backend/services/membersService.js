@@ -72,6 +72,24 @@ async function joinTripByCode(inviteCode, userId) {
   if (existingMemberError) throw new Error(existingMemberError.message);
   if (existingMember) return trip;
 
+  const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
+  const authUser = authUserData?.user;
+  const fullName =
+    authUser?.user_metadata?.full_name ||
+    authUser?.user_metadata?.name ||
+    authUser?.email?.split("@")[0] ||
+    "User";
+
+  await supabase.from("users").upsert(
+    {
+      id: userId,
+      full_name: fullName,
+      avatar_url: authUser?.user_metadata?.avatar_url || null,
+      email: authUser?.email || null,
+    },
+    { onConflict: "id" },
+  );
+
   const { error: memberError } = await supabase.from("trip_members").insert({
     trip_id: trip.id,
     user_id: userId,
@@ -91,8 +109,9 @@ async function getTripMembers(tripId) {
     .eq("trip_id", tripId);
 
   if (membersError) throw new Error(membersError.message);
+  if (!memberRows?.length) return [];
 
-  const userIds = [...new Set((memberRows || []).map((row) => row.user_id))];
+  const userIds = [...new Set(memberRows.map((row) => row.user_id))];
   const { data: users, error: usersError } = userIds.length
     ? await supabase
         .from("users")
@@ -107,10 +126,35 @@ async function getTripMembers(tripId) {
     usersById[user.id] = user;
   }
 
+  for (const row of memberRows || []) {
+    if (usersById[row.user_id]) continue;
+
+    const { data: authUserData } = await supabase.auth.admin.getUserById(
+      row.user_id,
+    );
+    const authUser = authUserData?.user;
+
+    if (!authUser) continue;
+
+    usersById[row.user_id] = {
+      id: row.user_id,
+      full_name:
+        authUser.user_metadata?.full_name ||
+        authUser.user_metadata?.name ||
+        authUser.email?.split("@")[0] ||
+        "User",
+      avatar_url: authUser.user_metadata?.avatar_url || null,
+      email: authUser.email || null,
+    };
+
+    await supabase.from("users").upsert(usersById[row.user_id], {
+      onConflict: "id",
+    });
+  }
+
   return (memberRows || [])
     .map((row) => {
       const user = usersById[row.user_id];
-
       return {
         role: row.role,
         joined_at: row.joined_at,
@@ -126,7 +170,6 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
-
 module.exports = {
   generateInviteCode,
   getInviteCode,

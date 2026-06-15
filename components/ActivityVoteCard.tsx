@@ -11,7 +11,8 @@ import { FaThumbsUp,FaThumbsDown  } from "react-icons/fa";
 import { FaCompass } from 'react-icons/fa'
 import { apiUrl } from '@/lib/api'
 
-export default function ActivityVoteCard({ activity, tripId,membersCount }: { activity?: Activity | null; tripId: string; membersCount: number }) {
+export default function ActivityVoteCard({ activity, tripId,membersCount,onSuccess }: { activity?: Activity | null; tripId: string; membersCount: number; onSuccess: () => void }) {
+    
     const { currentToken } = useTripContext()
     const [isVoting, setIsVoting] = useState(false)
     const [imageFailed, setImageFailed] = useState(false)
@@ -47,8 +48,10 @@ export default function ActivityVoteCard({ activity, tripId,membersCount }: { ac
 
             if (!res.ok) throw new Error('Failed to submit vote');
             toast.success('Vote recorded!');
-        } catch {
-            toast.error('Error recording vote.');
+            onSuccess()
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : 'Error recording vote.';
+            toast.error(errorMessage);
             setUserVote(previousVote)
             setVotes(previousVotes)
         } finally {

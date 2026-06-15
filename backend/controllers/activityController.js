@@ -22,7 +22,7 @@ async function createActivity(req, res) {
     }
     
     try {
-        const activity = await activityService.createActivity(req.params.tripId, {
+        const activity = await activityService.createActivity(req.params.tripId, req.user.id, {
             title,
             type,
             location,
@@ -37,6 +37,9 @@ async function createActivity(req, res) {
         });
         res.status(201).json(activity);
     } catch (err) {
+        if (err.message === "FORBIDDEN") {
+            return res.status(403).json({ error: "Seul le owner peut créer une activité" });
+        }
         res.status(500).json({ error: err.message });
     }
 }
@@ -45,10 +48,13 @@ async function updateActivity(req, res) {
     try{
 
         const {scheduled_time, scheduled_date } = req.body;
-        res.json(await activityService.updateActivity(req.params.activityId, {
+        res.json(await activityService.updateActivity(req.params.tripId, req.params.activityId, req.user.id, {
             scheduled_date
         }));
     } catch (err) {
+        if (err.message === "FORBIDDEN") {
+            return res.status(403).json({ error: "Seul le owner peut modifier une activité" });
+        }
         res.status(500).json({ error: err.message });
     }
         
@@ -56,9 +62,12 @@ async function updateActivity(req, res) {
 
 async function deleteActivity(req, res) {
     try {
-        const activity = await activityService.deleteActivity(req.params.activityId);
+        const activity = await activityService.deleteActivity(req.params.tripId, req.params.activityId, req.user.id);
         res.json(activity);
     } catch (err) {
+        if (err.message === "FORBIDDEN") {
+            return res.status(403).json({ error: "Seul le owner peut supprimer une activité" });
+        }
         res.status(500).json({ error: err.message });
     }
 }
@@ -75,7 +84,6 @@ async function voteActivity(req, res) {
       }
 
       const result = await activityService.castVote(
-          req.params.tripId,
           activityId,
           userId,
           voteValue,
