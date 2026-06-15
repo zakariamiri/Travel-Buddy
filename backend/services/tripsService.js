@@ -101,7 +101,7 @@ async function getTripsByUser(userId, filter = "all") {
   const { data: trips, error: tripsErr } = await supabase
     .from("trips")
     .select(
-      "id, name, destination, cover_url, start_date, end_date, created_at, is_confirmed",
+      "id, name, destination, cover_url, start_date, end_date, created_at, is_confirmed, budget_total",
     )
     .in("id", tripIds)
     .order("created_at", { ascending: false });
@@ -172,9 +172,69 @@ async function getTripById(tripId, userId) {
   };
 }
 
+async function updateTripBudget(userId, tripId, budgetTotal) {
+  const { data: membership, error: membershipError } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (membershipError) throw new Error(membershipError.message);
+  if (!membership) throw new Error("FORBIDDEN");
+  if (!["owner", "admin"].includes(membership.role)) {
+    throw new Error("OWNER_REQUIRED");
+  }
+
+  const { data, error } = await supabase
+    .from("trips")
+    .update({ budget_total: budgetTotal })
+    .eq("id", tripId)
+    .select("*")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
+async function updateTrip(
+  userId,
+  tripId,
+  { name, destination, cover_url, start_date, end_date, budget_total },
+) {
+  const { data: membership, error: membershipError } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (membershipError) throw new Error(membershipError.message);
+  if (!membership || !["owner", "admin"].includes(membership.role)) {
+    throw new Error("FORBIDDEN");
+  }
+
+  const { data, error } = await supabase
+    .from("trips")
+    .update({
+      name,
+      destination,
+      cover_url: cover_url || null,
+      start_date: start_date || null,
+      end_date: end_date || null,
+      budget_total,
+    })
+    .eq("id", tripId)
+    .select("*")
+    .single();
+
+  if (error) throw new Error(error.message);
+  return data;
+}
+
 async function createTrip(
   userId,
-  { name, destination, cover_url, start_date, end_date },
+  { name, destination, cover_url, start_date, end_date, budget_total },
 ) {
   let trip;
   let tripErr;
@@ -188,6 +248,7 @@ async function createTrip(
         cover_url,
         start_date: start_date || null,
         end_date: end_date || null,
+        budget_total,
         invite_code: generateInviteCode(),
         is_confirmed: false,
       })
@@ -225,10 +286,46 @@ async function deleteTrip(userId, tripId) {
 
   if (!membership || membership.role !== "owner") throw new Error("FORBIDDEN");
 
+  const { data: items, error: itemsError } = await supabase
+    .from("trip_items")
+    .select("id")
+    .eq("trip_id", tripId);
+  if (itemsError) throw new Error(itemsError.message);
+
+  const itemIds = (items || []).map((item) => item.id);
+  if (itemIds.length) {
+    const { error: votesError } = await supabase
+      .from("activity_votes")
+      .delete()
+      .in("activity_id", itemIds);
+    if (votesError) throw new Error(votesError.message);
+
+    const { error: commentsError } = await supabase
+      .from("comments")
+      .delete()
+      .in("item_id", itemIds);
+    if (commentsError) throw new Error(commentsError.message);
+  }
+
+  for (const table of ["expenses", "trip_days", "trip_items", "trip_members"]) {
+    const { error: relatedError } = await supabase
+      .from(table)
+      .delete()
+      .eq("trip_id", tripId);
+    if (relatedError) throw new Error(relatedError.message);
+  }
+
   const { error } = await supabase.from("trips").delete().eq("id", tripId);
   if (error) throw new Error(error.message);
 
   return true;
 }
 
-module.exports = { getTripsByUser, createTrip, deleteTrip, getTripById };
+module.exports = {
+  getTripsByUser,
+  createTrip,
+  deleteTrip,
+  getTripById,
+  updateTripBudget,
+  updateTrip,
+};

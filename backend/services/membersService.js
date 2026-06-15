@@ -109,8 +109,9 @@ async function getTripMembers(tripId) {
     .eq("trip_id", tripId);
 
   if (membersError) throw new Error(membersError.message);
+  if (!memberRows?.length) return [];
 
-  const userIds = [...new Set((memberRows || []).map((row) => row.user_id))];
+  const userIds = [...new Set(memberRows.map((row) => row.user_id))];
   const { data: users, error: usersError } = userIds.length
     ? await supabase
         .from("users")
@@ -154,7 +155,6 @@ async function getTripMembers(tripId) {
   return (memberRows || [])
     .map((row) => {
       const user = usersById[row.user_id];
-
       return {
         role: row.role,
         joined_at: row.joined_at,
@@ -170,7 +170,6 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
-
 module.exports = {
   generateInviteCode,
   getInviteCode,

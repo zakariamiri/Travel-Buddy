@@ -5,8 +5,20 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const allowedOrigins = (process.env.FRONTEND_URL || "http://localhost:3000")
   .split(",")
-  .map((origin) => origin.trim());
-app.use(cors({ origin: allowedOrigins }));
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error("Origine non autorisee par CORS"));
+    },
+  }),
+);
 app.use(express.json());
 app.use((err, req, res, next) => {
   if (err instanceof SyntaxError && "body" in err) {
@@ -34,6 +46,18 @@ app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({ error: "Erreur serveur" });
 });
-app.listen(PORT, () =>
-  console.log(` Server running on http://localhost:${PORT}`),
+const server = app.listen(PORT, () =>
+  console.log(`Server running on http://localhost:${PORT}`),
 );
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(
+      `Le port ${PORT} est deja utilise. Ferme l'ancien backend ou change PORT dans backend/.env.`,
+    );
+    process.exit(1);
+  }
+
+  console.error("Impossible de lancer le backend:", error);
+  process.exit(1);
+});

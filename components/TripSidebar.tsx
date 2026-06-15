@@ -111,6 +111,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                 const text = await res.text();
                 const data = text ? JSON.parse(text) : [];
                 setMembers(Array.isArray(data) ? data : []);
+                console.log('Fetched members:', data);
             } catch (err) {
                 console.error('Error fetching trip members:', err);
             }
@@ -226,7 +227,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                 <SidebarContent className="flex flex-col gap-3 py-4">
                     {!isCollapsed && (
                         <SidebarGroup className="px-3">
-                            <div className='relative overflow-hidden rounded-lg border border-white/70 bg-white shadow-sm'>
+                            <div className='relative overflow-hidden rounded-lg border border-[#e4b997] bg-[#f6ddca] shadow-sm'>
                                 <Image
                                     src={tripDetails.cover_url}
                                     alt={tripDetails.name}
@@ -234,8 +235,9 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                     height={200}
                                     className='h-40 w-full object-cover'
                                     priority
+                                    unoptimized
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
+                                <div className="absolute inset-0 bg-linear-to-t from-[#4f1b09]/90 via-[#4f1b09]/25 to-transparent" />
                                 <div className='absolute bottom-3 left-3 right-3 flex flex-col gap-2 text-white'>
                                     <div className='min-w-0'>
                                         <h2 className='line-clamp-2 text-base font-bold leading-tight'>{tripDetails.name}</h2>
@@ -245,10 +247,10 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                         </span>
                                     </div>
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-primary">
+                                        <span className="rounded-full border border-white/40 bg-[#f6ddca]/95 px-2.5 py-1 text-xs font-bold text-[#8a3412] shadow-sm backdrop-blur">
                                             {tripDetails.destination}
                                         </span>
-                                        <span className="rounded-full bg-white/90 px-2.5 py-1 text-xs font-bold text-primary">
+                                        <span className="rounded-full border border-white/40 bg-[#f6ddca]/95 px-2.5 py-1 text-xs font-bold text-[#8a3412] shadow-sm backdrop-blur">
                                             {members.length || tripDetails.membersCount || 0} members
                                         </span>
                                     </div>
@@ -259,11 +261,11 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
 
                     {!isCollapsed && (
                         <SidebarGroup className="px-3">
-                            <div className="rounded-lg border border-[#ead9bf] bg-white p-3 shadow-sm">
+                            <div className="rounded-lg border border-[#e4b997] bg-[#f6ddca] p-3 shadow-sm">
                                 <div className='mb-3 flex items-center justify-between'>
                                     <div>
-                                        <p className='text-xs font-bold uppercase tracking-wide text-gray-600'>Members</p>
-                                        <p className="text-xs text-gray-500">Trip participants</p>
+                                        <p className='text-xs font-bold uppercase tracking-wide text-[#7f2a07]'>Members</p>
+                                        <p className="text-xs text-[#9f5b3e]">Trip participants</p>
                                     </div>
                                     {isOwner && (
                                         <button
@@ -292,7 +294,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                                                 className={`h-9 w-9 ${
                                                                     memberIsOwner
                                                                         ? 'ring-2 ring-primary'
-                                                                        : 'ring-2 ring-white'
+                                                                        : 'ring-2 ring-[#f6ddca]'
                                                                 }`}
                                                             >
                                                                 <AvatarImage src={getAvatarUrl(member)} alt={label} />
@@ -307,7 +309,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                             );
                                         })}
                                         {extraMembers > 0 && (
-                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-white">
+                                            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-xs font-semibold text-white ring-2 ring-[#f6ddca]">
                                                 +{extraMembers}
                                             </div>
                                         )}
@@ -335,9 +337,17 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                                 href={item.link}
                                                 className={`group flex w-full items-center gap-3 rounded-lg py-3 text-sm font-semibold transition-all
                                                 ${isCollapsed ? 'justify-center px-2' : 'px-3'}
-                                                ${isActive ? 'bg-[#9f411d] text-white shadow-sm' : 'text-gray-800 hover:bg-[#9f411d] hover:text-white'}`}
+                                                ${isActive
+                                                    ? 'bg-[#9f411d] text-white shadow-sm'
+                                                    : 'text-gray-800 hover:bg-[#f3d5bf] hover:text-[#9f411d]'}`}
                                             >
-                                                <Icon className={`size-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-[#9f411d] group-hover:text-white'}`} />
+                                                <Icon
+                                                    className={`size-5 shrink-0 transition-colors ${
+                                                        isActive
+                                                            ? 'text-white'
+                                                            : 'text-[#b2471d] group-hover:text-[#b2471d]'
+                                                    }`}
+                                                />
                                                 {!isCollapsed && <span>{item.name}</span>}
                                             </Link>
                                         </li>

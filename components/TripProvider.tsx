@@ -87,7 +87,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         fetchActivities();
-    }, [id, currentToken]);
+    }, [id, currentToken,activities]);
 
     const handleDelete = async (activityId: string) => {
         if (!canManageTrip) {

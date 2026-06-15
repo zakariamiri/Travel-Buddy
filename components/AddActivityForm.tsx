@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -11,12 +11,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { createClient } from '@/utils/supabase/client'
+import { apiUrl } from '@/lib/api'
 import { ACTIVITY_TYPES } from '@/types/types'
+import { createClient } from '@/utils/supabase/client'
 import { FaCompass } from 'react-icons/fa'
 import { toast } from 'sonner'
 import { useTripContext } from './TripProvider'
-import { apiUrl } from '@/lib/api'
 
 interface AddActivityFormProps {
   tripId: string | string[]
@@ -29,7 +29,6 @@ interface AddActivityFormProps {
 export default function AddActivityForm({
   tripId,
   tripStartDate,
-  tripEndDate,
   onSuccess,
   onCancel,
 }: AddActivityFormProps) {
@@ -39,20 +38,9 @@ export default function AddActivityForm({
   const [currentToken, setCurrentToken] = useState<string | null>(null)
   const memberCount = Math.max(1, tripDetails?.membersCount ?? 1)
 
-  const calculateDays = () => {
-    if (!tripStartDate || !tripEndDate) return 0
-    const start = new Date(tripStartDate)
-    const end = new Date(tripEndDate)
-    return Math.ceil((end.getTime() - start.getTime()) / (1000 * 3600 * 24)) + 1
-  }
-
-  const tripDays = calculateDays()
-
-  const getDayDate = (dayNumber: number) => {
-    if (!tripStartDate || dayNumber < 1) return tripStartDate
-    const date = new Date(tripStartDate)
-    date.setDate(date.getDate() + (dayNumber - 1))
-    return date.toISOString().split('T')[0]
+  const getInitialDate = () => {
+    if (!tripStartDate) return ''
+    return new Date(tripStartDate).toISOString().split('T')[0]
   }
 
   const [formData, setFormData] = useState({
@@ -61,7 +49,7 @@ export default function AddActivityForm({
     location: '',
     notes: '',
     image_url: '',
-    scheduled_date: getDayDate(1),
+    scheduled_date: getInitialDate(),
     scheduled_time: '',
     status: 'pending',
     price_per_person: '',
@@ -71,7 +59,7 @@ export default function AddActivityForm({
 
   const estimatedTotal = (Number(formData.price_per_person) || 0) * memberCount
 
-  React.useEffect(() => {
+  useEffect(() => {
     const getToken = async () => {
       const supabase = createClient()
       const { data: { session } } = await supabase.auth.getSession()
@@ -81,326 +69,270 @@ export default function AddActivityForm({
   }, [])
 
   const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
   ) => {
-    const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    const { name, value } = event.target
+    setFormData((current) => ({ ...current, [name]: value }))
   }
 
-  const handleSelectChange = (name: string, value: string) => {
-    if (name === 'selectedDay') {
-      const dayNumber = parseInt(value)
-      const correspondingDate = getDayDate(dayNumber)
-      setFormData((prev) => ({
-        ...prev,
-        selectedDay: value,
-        scheduled_date: correspondingDate,
-      }))
-    } else {
-      setFormData((prev) => ({
-        ...prev,
-        [name]: value,
-      }))
+  const uploadImage = async (file: File) => {
+    setLoading(true)
+    try {
+      const supabase = createClient()
+      const fileName = `activities/${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`
+      const { error: uploadError } = await supabase.storage
+        .from('trip-covers')
+        .upload(fileName, file)
+
+      if (uploadError) throw uploadError
+
+      const { data } = supabase.storage
+        .from('trip-covers')
+        .getPublicUrl(fileName)
+
+      setFormData((current) => ({ ...current, image_url: data.publicUrl }))
+      toast.success('Image uploaded')
+    } catch (uploadError) {
+      console.error('Activity image upload error:', uploadError)
+      toast.error('Failed to upload image')
+    } finally {
+      setLoading(false)
     }
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault()
     setError(null)
+
+    if (!formData.title.trim() || !formData.scheduled_date) {
+      setError('Title and scheduled date are required')
+      return
+    }
+    if (!currentToken) {
+      setError('Authentication session is not ready')
+      return
+    }
+
     setLoading(true)
-
     try {
-      if (!formData.title || !formData.scheduled_date) {
-        setError('Title and scheduled date are required')
-        setLoading(false)
-        return
-      }
-
-      const payload = {
-        trip_id: tripId,
-        type: formData.type,
-        title: formData.title,
-        location: formData.location || null,
-        notes: formData.notes || null,
-        image_url: formData.image_url || null,
-        scheduled_date: formData.scheduled_date,
-        scheduled_time: formData.scheduled_time || null,
-        status: formData.status,
-        price_per_person: formData.price_per_person ? parseFloat(formData.price_per_person) : null,
-        lat: formData.lat ? parseFloat(formData.lat) : null,
-        lon: formData.lon ? parseFloat(formData.lon) : null,
-      }
-
-      const response = await fetch(
-        apiUrl(`/api/trips/${tripId}/activities`),
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${currentToken}`,
-          },
-          body: JSON.stringify(payload),
-        }
-      )
-
-      if (!response.ok) {
-        throw new Error('Failed to create activity')
-      }
+      const response = await fetch(apiUrl(`/api/trips/${tripId}/activities`), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${currentToken}`,
+        },
+        body: JSON.stringify({
+          type: formData.type,
+          title: formData.title.trim(),
+          location: formData.location || null,
+          notes: formData.notes || null,
+          image_url: formData.image_url || null,
+          scheduled_date: formData.scheduled_date,
+          scheduled_time: formData.scheduled_time || null,
+          status: formData.status,
+          price_per_person: formData.price_per_person
+            ? Number(formData.price_per_person)
+            : 0,
+          lat: formData.lat ? Number(formData.lat) : null,
+          lon: formData.lon ? Number(formData.lon) : null,
+        }),
+      })
 
       const result = await response.json()
-      console.log('Activity created:', result)
-      toast.success('Activity added successfully', { duration: 3000 })
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to create activity')
+      }
 
+      toast.success('Activity added successfully')
       setFormData({
         type: 'activity',
         title: '',
         location: '',
         notes: '',
         image_url: '',
-        scheduled_date: getDayDate(1),
+        scheduled_date: getInitialDate(),
         scheduled_time: '',
         status: 'pending',
         price_per_person: '',
         lat: '',
         lon: '',
       })
-
       onSuccess?.()
-    } catch (err) {
-      console.error('Error creating activity:', err)
-      setError(err instanceof Error ? err.message : 'An error occurred')
-            toast.error('Failed to add activity', { duration: 3000})
+    } catch (submitError) {
+      const message =
+        submitError instanceof Error ? submitError.message : 'An error occurred'
+      setError(message)
+      toast.error(message)
     } finally {
       setLoading(false)
     }
   }
 
   const selectedActivityType = ACTIVITY_TYPES.find(
-    (type) => type.value === formData.type
+    (type) => type.value === formData.type,
   )
   const SelectedIcon = selectedActivityType?.icon || FaCompass
-
-  const groupedTypes = ACTIVITY_TYPES.reduce(
-    (acc, type) => {
-      if (!acc[type.category]) {
-        acc[type.category] = []
-      }
-      acc[type.category].push(type)
-      return acc
-    },
-    {} as Record<string, typeof ACTIVITY_TYPES>
-  )
-
-  const categoryOrder = [
-    'Accommodation',
-    'Dining',
-    'Transport',
-    'Sightseeing',
-    'Entertainment',
-    'Shopping',
-    'Adventure',
-    'Wellness',
-  ]
+  const categories = [...new Set(ACTIVITY_TYPES.map((type) => type.category))]
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-2xl mx-auto p-6 bg-white rounded-lg shadow-lg">
-      <h2 className="text-2xl font-bold mb-6">Add Activity</h2>
-
+    <form onSubmit={handleSubmit} className="w-full">
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">
+        <div className="mb-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {/* Type */}
+      <div className="grid gap-x-5 gap-y-3 md:grid-cols-2">
         <div>
-          <Label htmlFor="type" className="block text-sm font-medium mb-2">
-            Type *
-          </Label>
+          <Label className="mb-1.5 block">Type *</Label>
           <Select
             value={formData.type}
-            onValueChange={(value) => value && handleSelectChange('type', value)}
+            onValueChange={(value) =>
+              value && setFormData((current) => ({ ...current, type: value }))
+            }
           >
-            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-primary focus:border-primary rounded-lg h-10">
+            <SelectTrigger className="h-10 w-full border-[#e6d6c9] bg-white">
               <SelectValue>
                 <div className="flex items-center gap-2">
-                  <SelectedIcon className="text-lg text-primary" />
+                  <SelectedIcon className="text-primary" />
                   <span>{selectedActivityType?.label || 'Select type'}</span>
                 </div>
               </SelectValue>
             </SelectTrigger>
-            <SelectContent className="max-h-60">
-              {categoryOrder.map((category) => (
+            <SelectContent className="max-h-64">
+              {categories.map((category) => (
                 <div key={category}>
-                  <div className="px-2 py-1.5 text-xs font-semibold text-gray-500 bg-gray-50 sticky top-0">
+                  <div className="sticky top-0 bg-gray-50 px-2 py-1.5 text-xs font-semibold text-gray-500">
                     {category}
                   </div>
-                  {groupedTypes[category]?.map((type) => {
-                    const IconComponent = type.icon
-                    return (
-                      <SelectItem
-                        key={type.value}
-                        value={type.value}
-                        className="
-                        flex items-center gap-2 pl-8 py-2 cursor-pointer
-                        text-primary
-                        data-[highlighted]:bg-primary
-                      data-[highlighted]:text-white"
-                      >
-                        <div className="flex items-center gap-2 w-full">
-                          <IconComponent className="text-base text-current flex-shrink-0" />
-                          <span>{type.label}</span>
-                        </div>
-                      </SelectItem>
-                    )
-                  })}
+                  {ACTIVITY_TYPES.filter((type) => type.category === category).map(
+                    (type) => {
+                      const Icon = type.icon
+                      return (
+                        <SelectItem key={type.value} value={type.value}>
+                          <span className="flex items-center gap-2">
+                            <Icon />
+                            {type.label}
+                          </span>
+                        </SelectItem>
+                      )
+                    },
+                  )}
                 </div>
               ))}
             </SelectContent>
           </Select>
         </div>
 
-        {/* Status */}
-        {/* <div>
-          <Label htmlFor="status" className="block text-sm font-medium mb-2">
-            Status
-          </Label>
-          <Select
-            value={formData.status}
-            onValueChange={(value) => value && handleSelectChange('status', value)}
-          >
-            <SelectTrigger className="bg-white border-2 border-gray-200 hover:border-primary focus:border-primary rounded-lg h-10">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="pending">Pending</SelectItem>
-              <SelectItem value="approved">Approved</SelectItem>
-              <SelectItem value="rejected">Rejected</SelectItem>
-            </SelectContent>
-          </Select>
-        </div> */}
-      </div>
-
-      {/* Title */}
-      <div className="mb-4">
-        <Label htmlFor="title" className="block text-sm font-medium mb-2">
-          Title *
-        </Label>
-        <Input
-          type="text"
-          id="title"
-          name="title"
-          value={formData.title}
-          onChange={handleInputChange}
-          placeholder="e.g., Eiffel Tower Visit"
-          required
-        />
-      </div>
-
-      {/* Location */}
-      <div className="mb-4">
-        <Label htmlFor="location" className="block text-sm font-medium mb-2">
-          Location
-        </Label>
-        <Input
-          type="text"
-          id="location"
-          name="location"
-          value={formData.location}
-          onChange={handleInputChange}
-          placeholder="e.g., Paris, France"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-        {/* Scheduled Time */}
-        <div>
-          <Label htmlFor="scheduled_time" className="block text-sm font-medium mb-2">
-            Time
-          </Label>
+        <Field label="Title *">
           <Input
-            type="time"
-            id="scheduled_time"
-            name="scheduled_time"
-            value={formData.scheduled_time}
+            name="title"
+            value={formData.title}
             onChange={handleInputChange}
+            placeholder="Eiffel Tower Visit"
+            required
           />
+        </Field>
+
+        <Field label="Location">
+          <Input
+            name="location"
+            value={formData.location}
+            onChange={handleInputChange}
+            placeholder="Paris, France"
+          />
+        </Field>
+
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Time">
+            <Input
+              type="time"
+              name="scheduled_time"
+              value={formData.scheduled_time}
+              onChange={handleInputChange}
+            />
+          </Field>
+          <Field label="Price/person">
+            <Input
+              type="number"
+              name="price_per_person"
+              min="0"
+              value={formData.price_per_person}
+              onChange={handleInputChange}
+              placeholder="300"
+            />
+          </Field>
         </div>
 
-        <div>
-          <Label htmlFor="price_per_person" className="block text-sm font-medium mb-2">
-            Price/person
-          </Label>
-          <Input
-            type="number"
-            id="price_per_person"
-            name="price_per_person"
-            min="0"
-            value={formData.price_per_person}
-            onChange={handleInputChange}
-            placeholder="300 DH"
-          />
-          <div className="mt-2 rounded-lg border border-sky-100 bg-sky-50 px-3 py-2 text-sm text-sky-800">
-            <span className="font-semibold">Total estimé:</span> {estimatedTotal.toLocaleString('fr-MA')} DH
-            <span className="text-sky-600"> ({memberCount} members)</span>
+        <div className="flex items-center rounded-lg border border-[#ecd2bd] bg-[#fff6ef] px-3 py-2 text-sm text-[#7f2a07]">
+          <span className="font-semibold">Total estime:</span>
+          <span className="ml-1">{estimatedTotal.toLocaleString('fr-MA')} DH</span>
+          <span className="ml-1 text-[#a35e3d]">({memberCount} members)</span>
+        </div>
+
+        <Field label="Activity image">
+          <div className="grid grid-cols-2 gap-2">
+            <Input
+              type="url"
+              name="image_url"
+              value={formData.image_url}
+              onChange={handleInputChange}
+              placeholder="Direct image URL"
+            />
+            <Input
+              type="file"
+              accept="image/*"
+              disabled={loading}
+              onChange={(event) => {
+                const file = event.target.files?.[0]
+                if (file) uploadImage(file)
+              }}
+            />
           </div>
+        </Field>
+
+        <div className="md:col-span-2">
+          <Label className="mb-1.5 block">Notes</Label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleInputChange}
+            placeholder="Add any additional notes..."
+            rows={2}
+            className="min-h-20 w-full rounded-lg border border-[#e6d6c9] px-3 py-2 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/20"
+          />
         </div>
       </div>
 
-      {/* Image URL */}
-      <div className="mb-4">
-        <Label htmlFor="image_url" className="block text-sm font-medium mb-2">
-          Image URL
-        </Label>
-        <Input
-          type="url"
-          id="image_url"
-          name="image_url"
-          value={formData.image_url}
-          onChange={handleInputChange}
-          placeholder="https://example.com/image.jpg"
-        />
-      </div>
-
-      {/* Notes */}
-      <div className="mb-6">
-        <Label htmlFor="notes" className="block text-sm font-medium mb-2">
-          Notes
-        </Label>
-        <textarea
-          id="notes"
-          name="notes"
-          value={formData.notes}
-          onChange={handleInputChange}
-          placeholder="Add any additional notes..."
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-          rows={4}
-        />
-      </div>
-
-      {/* Buttons */}
-      <div className="flex gap-4">
-        <Button
-          type="submit"
-          disabled={loading}
-          className="flex-1 bg-primary text-white font-semibold py-2 rounded-lg"
-        >
-          {loading ? 'Adding...' : 'Add Activity'}
-        </Button>
+      <div className="mt-4 flex justify-end gap-2 border-t border-[#f0dfd2] pt-4">
         {onCancel && (
-          <Button
-            type="button"
-            onClick={onCancel}
-            className="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg"
-          >
+          <Button type="button" variant="outline" onClick={onCancel}>
             Cancel
           </Button>
         )}
+        <Button
+          type="submit"
+          disabled={loading}
+          className="min-w-36 bg-primary font-semibold text-white hover:bg-[#7f2a07]"
+        >
+          {loading ? 'Adding...' : 'Add Activity'}
+        </Button>
       </div>
     </form>
+  )
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <Label className="mb-1.5 block">{label}</Label>
+      {children}
+    </div>
   )
 }
