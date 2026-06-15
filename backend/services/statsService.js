@@ -120,47 +120,69 @@ async function getStats(userId) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const upcomingTrips = (trips || [])
-      .filter((t) => {
-        if (!t.start_date) return false;
-        if (!t.is_confirmed) return false; // PLANNING exclus
-        const end = t.end_date ? new Date(t.end_date) : new Date(t.start_date);
+    const activeCandidates = (trips || [])
+      .filter((trip) => {
+        if (!trip.start_date) return false;
+        const end = trip.end_date
+          ? new Date(trip.end_date)
+          : new Date(trip.start_date);
         return end >= today;
       })
-      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+      .sort((a, b) => {
+        const aStart = new Date(a.start_date);
+        const bStart = new Date(b.start_date);
+        const aOngoing = aStart <= today;
+        const bOngoing = bStart <= today;
 
-    const nextTrip = upcomingTrips[0] || null;
+        if (aOngoing !== bOngoing) return aOngoing ? -1 : 1;
+        return aStart - bStart;
+      });
+
+    const activeTrip = activeCandidates[0] || null;
+    const futureTrips = activeCandidates
+      .filter((trip) => new Date(trip.start_date) > today)
+      .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+    const nextFutureTrip = futureTrips[0] || null;
+
     let daysUntilNextTrip = null;
-    if (nextTrip) {
-      const diff = new Date(nextTrip.start_date) - today;
+    if (nextFutureTrip) {
+      const diff = new Date(nextFutureTrip.start_date) - today;
       daysUntilNextTrip = Math.ceil(diff / (1000 * 60 * 60 * 24));
     }
 
     let collaborators = 0;
-    if (nextTrip) {
+    if (activeTrip) {
       const { data: members } = await supabase
         .from("trip_members")
         .select("user_id")
-        .eq("trip_id", nextTrip.id);
+        .eq("trip_id", activeTrip.id);
       collaborators = members?.length || 0;
     }
 
-    const { data: expenses } = await supabase
-      .from("expenses")
-      .select("amount")
-      .in("trip_id", tripIds);
+    const { data: expenses } = activeTrip
+      ? await supabase
+          .from("expenses")
+          .select("amount")
+          .eq("trip_id", activeTrip.id)
+      : { data: [] };
     const pendingSplit = (expenses || []).reduce(
       (sum, e) => sum + Number(e.amount),
       0,
     );
 
     return {
-      activeTrip: nextTrip
+      activeTrip: activeTrip
         ? {
-            id: nextTrip.id,
-            name: nextTrip.name,
-            start_date: nextTrip.start_date,
-            daysUntilStart: daysUntilNextTrip,
+            id: activeTrip.id,
+            name: activeTrip.name,
+            start_date: activeTrip.start_date,
+            daysUntilStart: Math.max(
+              0,
+              Math.ceil(
+                (new Date(activeTrip.start_date) - today) /
+                  (1000 * 60 * 60 * 24),
+              ),
+            ),
             collaborators,
           }
         : null,

@@ -80,20 +80,10 @@ async function createActivity(tripId, { title, type, location, notes, image_url,
         lon
     };
 
-    let { data: activity, error } = await supabase.from("trip_items")
+    const { data: activity, error } = await supabase.from("trip_items")
         .insert(payload)
         .select()
         .single();
-
-    if (error && error.code === "PGRST204" && error.message?.includes("price_per_person")) {
-        delete payload.price_per_person;
-        const retry = await supabase.from("trip_items")
-            .insert(payload)
-            .select()
-            .single();
-        activity = retry.data;
-        error = retry.error;
-    }
 
     if (error) {
         console.error("Error creating activity:", error);
@@ -131,52 +121,69 @@ async function deleteActivity(activityId) {
     }
     return activity;
 }
+
 async function castVote(activityId, userId, voteValue) {
-  const { error: voteError } = await supabase
-    .from("activity_votes")
-    .upsert(
-      { activity_id: activityId, user_id: userId, vote_value: voteValue },
-      { onConflict: "activity_id,user_id" }
-    );
+    // Get trip_id from the activity
+    const { data: activity, error: activityError } = await supabase
+        .from("trip_items")
+        .select("trip_id")
+        .eq("id", activityId)
+        .single();
 
-  if (voteError) throw voteError;
+    if (activityError) throw activityError;
+    if (!activity) throw new Error("ACTIVITY_NOT_FOUND");
 
-  // Get trip_id from the activity
-  const { data: activity, error: activityError } = await supabase
-    .from("trip_items")
-    .select("trip_id")
-    .eq("id", activityId)
-    .single();
+    const tripId = activity.trip_id;
 
-  if (activityError) throw activityError;
+    // Verify user is a member of the trip
+    const { data: membership, error: membershipError } = await supabase
+        .from("trip_members")
+        .select("user_id")
+        .eq("trip_id", tripId)
+        .eq("user_id", userId)
+        .maybeSingle();
 
-  const membersCount = await getMembersCount(activity.trip_id);
+    if (membershipError) throw membershipError;
+    if (!membership) throw new Error("FORBIDDEN");
 
-  const [{ count: likesCount }, { count: dislikesCount }] = await Promise.all([
-    supabase
-      .from("activity_votes")
-      .select("*", { count: "exact", head: true })
-      .eq("activity_id", activityId)
-      .eq("vote_value", 1),
+    const { error: voteError } = await supabase
+        .from("activity_votes")
+        .upsert(
+            { activity_id: activityId, user_id: userId, vote_value: voteValue },
+            { onConflict: "activity_id,user_id" }
+        );
 
-    supabase
-      .from("activity_votes")
-      .select("*", { count: "exact", head: true })
-      .eq("activity_id", activityId)
-      .eq("vote_value", -1),
-  ]);
+    if (voteError) throw voteError;
 
-  if (likesCount >= Math.ceil(membersCount / 2)) {
-    await supabase
-      .from("trip_items")
-      .update({ status: "approved" })
-      .eq("id", activityId);
-  } else if (dislikesCount >= Math.ceil(membersCount / 2)) {
-    await supabase
-      .from("trip_items")
-      .update({ status: "rejected" })
-      .eq("id", activityId);
-  }
+    const membersCount = await getMembersCount(tripId);
+
+    const [{ count: likesCount }, { count: dislikesCount }] = await Promise.all([
+        supabase
+            .from("activity_votes")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_id", activityId)
+            .eq("vote_value", 1),
+
+        supabase
+            .from("activity_votes")
+            .select("*", { count: "exact", head: true })
+            .eq("activity_id", activityId)
+            .eq("vote_value", -1),
+    ]);
+
+    let newStatus = 'pending';
+    if (likesCount >= Math.ceil(membersCount / 2)) {
+        newStatus = 'approved';
+    } else if (dislikesCount >= Math.ceil(membersCount / 2)) {
+        newStatus = 'rejected';
+    }
+
+    if (newStatus !== 'pending') {
+        await supabase
+            .from("trip_items")
+            .update({ status: newStatus })
+            .eq("id", activityId);
+    }
 }
 
 module.exports = {

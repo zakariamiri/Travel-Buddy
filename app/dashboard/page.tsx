@@ -18,14 +18,17 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
+import { Plus } from "lucide-react";
 
 type DashboardTrip = {
   id: string;
   name: string;
+  destination: string;
   cover_url?: string | null;
   start_date?: string | null;
   end_date?: string | null;
-  status: "CONFIRMED" | "PLANNING" | "PAST";
+  budget_total?: number;
+  status: "CONFIRMED" | "PLANNING" | "ONGOING" | "PAST";
   role?: string;
   members?: {
     id: string;
@@ -56,6 +59,7 @@ export default function Dashboard() {
     cover_url: "",
     start_date: "",
     end_date: "",
+    budget_total: "5000",
   });
 
   useEffect(() => {
@@ -108,6 +112,12 @@ export default function Dashboard() {
       return;
     }
 
+    const budgetTotal = Number(formData.budget_total);
+    if (!Number.isFinite(budgetTotal) || budgetTotal < 0) {
+      setFormError("Le budget doit etre un montant valide.");
+      return;
+    }
+
     setSubmitting(true);
     try {
       const res = await fetch(apiUrl("/api/trips"), {
@@ -116,7 +126,10 @@ export default function Dashboard() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          budget_total: budgetTotal,
+        }),
       });
 
       if (!res.ok) {
@@ -131,6 +144,7 @@ export default function Dashboard() {
         cover_url: "",
         start_date: "",
         end_date: "",
+        budget_total: "5000",
       });
       setDialogOpen(false);
       fetchTrips(token, filter);
@@ -166,9 +180,11 @@ export default function Dashboard() {
               </div>
 
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger className="flex w-fit items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#9f411d]">
-                  <i className="ri-add-line text-lg"></i>
-                  New Trip
+                <DialogTrigger className="group flex h-11 w-fit items-center gap-3 rounded-lg border border-[#dfb99d] bg-white px-2.5 pr-4 text-sm font-bold text-[#7f2a07] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#c97950] hover:shadow-[0_8px_20px_rgba(127,42,7,0.14)]">
+                  <span className="flex size-7 items-center justify-center rounded-md bg-[#9f411d] text-white transition-colors group-hover:bg-[#7f2a07]">
+                    <Plus className="size-4" />
+                  </span>
+                  Create Trip
                 </DialogTrigger>
 
             <DialogContent className="rounded-2xl max-w-md">
@@ -275,6 +291,37 @@ export default function Dashboard() {
                   </div>
                 </div>
 
+                <div>
+                  <label
+                    htmlFor="trip-budget"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Budget total (DH)
+                  </label>
+                  <div className="relative mt-1">
+                    <i className="ri-wallet-3-line pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+                    <Input
+                      id="trip-budget"
+                      type="number"
+                      min="0"
+                      step="1"
+                      required
+                      value={formData.budget_total}
+                      onChange={(e) =>
+                        setFormData({
+                          ...formData,
+                          budget_total: e.target.value,
+                        })
+                      }
+                      placeholder="5000"
+                      className="pl-10"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Ce montant sera utilise pour calculer le budget restant.
+                  </p>
+                </div>
+
                 {formError && (
                   <p className="text-red-500 text-sm">{formError}</p>
                 )}
@@ -333,13 +380,16 @@ export default function Dashboard() {
             
             </div>
           ) : (
-            <div className="mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {trips.map((trip) => (
-              <a href={`/dashboard/${trip.id}`} key={trip.id} className="block">
                 <TripCard
                   key={trip.id}
                   id={trip.id}
                   title={trip.name}
+                  destination={trip.destination}
+                  startDate={trip.start_date}
+                  endDate={trip.end_date}
+                  budgetTotal={trip.budget_total}
                   date={
                     trip.start_date && trip.end_date
                       ? `${new Date(trip.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${new Date(trip.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
@@ -349,11 +399,12 @@ export default function Dashboard() {
                     trip.cover_url ||
                     "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
                   }
+                  coverUrl={trip.cover_url}
                   status={trip.status}
                   role={trip.role}
                   members={trip.members || []}
+                  onChanged={() => fetchTrips(token, filter)}
                 />
-              </a>
               ))}
             </div>
           )}

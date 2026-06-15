@@ -9,7 +9,7 @@ export default function DayColumn({ id, title, subtitle, children, modalTrigger 
     return (
         <div
             ref={setNodeRef}
-            className={`min-h-[420px] w-80 shrink-0 rounded-lg border bg-white p-4 shadow-sm transition-colors ${isOver ? 'border-primary bg-sidebar/60' : 'border-border'}`}
+            className={`min-h-[420px] w-80 shrink-0 rounded-lg border bg-white p-4 shadow-[0_10px_28px_rgba(127,42,7,0.12)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_36px_rgba(127,42,7,0.17)] ${isOver ? 'border-primary bg-sidebar/60 shadow-[0_16px_36px_rgba(127,42,7,0.2)]' : 'border-border'}`}
         >
             <div className='mb-4 flex items-center justify-between gap-3 border-b pb-3'>
                 <div>
