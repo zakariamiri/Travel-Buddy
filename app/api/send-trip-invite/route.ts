@@ -1,19 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import nodemailer from "nodemailer";
+import { apiUrl } from "@/lib/api";
 
 function parseEmails(value: string) {
   return value
     .split(/[\s,;]+/)
     .map((email) => email.trim().toLowerCase())
     .filter(Boolean);
-}
-
-function createInviteCode() {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-  return Array.from({ length: 8 }, () =>
-    chars[Math.floor(Math.random() * chars.length)],
-  ).join("");
 }
 
 function isMissingInvitationsTable(message?: string) {
@@ -40,10 +34,25 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      { error: "Configuration Supabase manquante" },
+      { status: 500 },
+    );
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  });
 
   const {
     data: { user },
@@ -54,134 +63,105 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Token invalide" }, { status: 401 });
   }
 
-  const { data: membership, error: membershipError } = await supabase
-    .from("trip_members")
-    .select("role")
-    .eq("trip_id", tripId)
-    .eq("user_id", user.id)
-    .single();
+  const tripResponse = await fetch(apiUrl(`/api/trips/${tripId}`), {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const tripPayload = await tripResponse.json().catch(() => ({}));
 
-  if (membershipError || membership?.role !== "owner") {
+  if (!tripResponse.ok) {
     return NextResponse.json(
-      { error: "Seul le owner peut inviter" },
+      { error: tripPayload.error || "Voyage introuvable" },
+      { status: tripResponse.status },
+    );
+  }
+
+  if (!["owner", "admin"].includes(tripPayload.role || "")) {
+    return NextResponse.json(
+      { error: "Seul l'admin du voyage peut inviter" },
       { status: 403 },
     );
   }
 
-  const { data: trip, error: tripError } = await supabase
-    .from("trips")
-    .select("id, name, invite_code")
-    .eq("id", tripId)
-    .single();
-
-  if (tripError || !trip) {
-    return NextResponse.json({ error: "Voyage introuvable" }, { status: 404 });
-  }
-
-  let inviteCode = trip.invite_code;
+  const inviteCodeResponse = await fetch(apiUrl(`/api/trips/${tripId}/invite-code`), {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: "no-store",
+  });
+  const inviteCodePayload = await inviteCodeResponse.json().catch(() => ({}));
+  const inviteCode = inviteCodePayload.invite_code || tripPayload.invite_code;
 
   if (!inviteCode) {
-    for (let attempt = 0; attempt < 5; attempt += 1) {
-      const code = createInviteCode();
-      const { data, error } = await supabase
-        .from("trips")
-        .update({ invite_code: code })
-        .eq("id", tripId)
-        .select("invite_code")
-        .single();
+    return NextResponse.json(
+      { error: inviteCodePayload.error || "Impossible de generer le lien" },
+      { status: 500 },
+    );
+  }
 
-      if (!error) {
-        inviteCode = data.invite_code;
-        break;
-      }
-      if (error.code !== "23505") {
-        return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY) {
+    const { data: invitedUsers } = await supabase
+      .from("users")
+      .select("id, email")
+      .in("email", emailList);
+
+    const usersByEmail = new Map(
+      (invitedUsers || []).map((invitedUser) => [
+        invitedUser.email?.toLowerCase(),
+        invitedUser.id,
+      ]),
+    );
+    const invitedUserIds = [...new Set([...usersByEmail.values()].filter(Boolean))];
+
+    const { data: existingMembers } =
+      invitedUserIds.length
+        ? await supabase
+            .from("trip_members")
+            .select("user_id")
+            .eq("trip_id", tripId)
+            .in("user_id", invitedUserIds)
+        : { data: [] };
+
+    const existingMemberIds = new Set(
+      (existingMembers || []).map((member) => member.user_id),
+    );
+    const acceptedAt = new Date().toISOString();
+
+    const { error: invitationError } = await supabase
+      .from("trip_invitations")
+      .upsert(
+        emailList.map((email) => {
+          const invitedUserId = usersByEmail.get(email);
+          const isAlreadyMember = Boolean(
+            invitedUserId && existingMemberIds.has(invitedUserId),
+          );
+
+          return {
+            trip_id: tripId,
+            invited_email: email,
+            invite_code: inviteCode,
+            invited_by: user.id,
+            status: isAlreadyMember ? "accepted" : "pending",
+            accepted_at: isAlreadyMember ? acceptedAt : null,
+          };
+        }),
+        { onConflict: "trip_id,invited_email" },
+      );
+
+    if (invitationError && !isMissingInvitationsTable(invitationError.message)) {
+      console.warn("Invitation tracking skipped:", invitationError.message);
     }
-  }
-
-  if (!inviteCode) {
-    return NextResponse.json(
-      { error: "Impossible de générer le lien" },
-      { status: 500 },
-    );
-  }
-
-  const { data: invitedUsers, error: invitedUsersError } = await supabase
-    .from("users")
-    .select("id, email")
-    .in("email", emailList);
-
-  if (invitedUsersError) {
-    return NextResponse.json(
-      { error: invitedUsersError.message },
-      { status: 500 },
-    );
-  }
-
-  const usersByEmail = new Map(
-    (invitedUsers || []).map((invitedUser) => [
-      invitedUser.email?.toLowerCase(),
-      invitedUser.id,
-    ]),
-  );
-  const invitedUserIds = [...new Set([...usersByEmail.values()].filter(Boolean))];
-
-  const { data: existingMembers, error: existingMembersError } =
-    invitedUserIds.length
-      ? await supabase
-          .from("trip_members")
-          .select("user_id")
-          .eq("trip_id", tripId)
-          .in("user_id", invitedUserIds)
-      : { data: [], error: null };
-
-  if (existingMembersError) {
-    return NextResponse.json(
-      { error: existingMembersError.message },
-      { status: 500 },
-    );
-  }
-
-  const existingMemberIds = new Set(
-    (existingMembers || []).map((member) => member.user_id),
-  );
-  const acceptedAt = new Date().toISOString();
-
-  const { error: invitationError } = await supabase
-    .from("trip_invitations")
-    .upsert(
-      emailList.map((email) => {
-        const invitedUserId = usersByEmail.get(email);
-        const isAlreadyMember = Boolean(
-          invitedUserId && existingMemberIds.has(invitedUserId),
-        );
-
-        return {
-          trip_id: tripId,
-          invited_email: email,
-          invite_code: inviteCode,
-          invited_by: user.id,
-          status: isAlreadyMember ? "accepted" : "pending",
-          accepted_at: isAlreadyMember ? acceptedAt : null,
-        };
-      }),
-      { onConflict: "trip_id,invited_email" },
-    );
-
-  if (invitationError) {
-    return NextResponse.json(
-      {
-        error: isMissingInvitationsTable(invitationError.message)
-          ? "La table trip_invitations n'existe pas encore dans Supabase. Execute la migration SQL avant d'envoyer des invitations avec notification."
-          : invitationError.message,
-      },
-      { status: 500 },
-    );
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? new URL(request.url).origin;
   const inviteLink = `${siteUrl}/join?code=${inviteCode}`;
+
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    return NextResponse.json({
+      success: true,
+      sent: 0,
+      inviteLink,
+      warning: "GMAIL_USER ou GMAIL_APP_PASSWORD manquant",
+    });
+  }
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -196,13 +176,13 @@ export async function POST(request: NextRequest) {
       transporter.sendMail({
         from: `Travel Buddy <${process.env.GMAIL_USER}>`,
         to: email,
-        subject: `Invitation voyage - ${trip.name}`,
+        subject: `Invitation voyage - ${tripPayload.name}`,
         html: `
           <div style="background:#FFEEE0;padding:32px;font-family:Arial,sans-serif;">
             <div style="max-width:520px;margin:0 auto;background:white;border-radius:14px;padding:28px;box-shadow:0 8px 28px rgba(0,0,0,.08);">
               <h1 style="margin:0 0 12px;color:#1a1a1a;font-size:24px;">Rejoins notre voyage</h1>
               <p style="margin:0 0 22px;color:#555;line-height:1.5;">
-                Tu as été invité(e) à collaborer sur le voyage <strong>${trip.name}</strong> dans Travel Buddy.
+                Tu as ete invite(e) a collaborer sur le voyage <strong>${tripPayload.name}</strong> dans Travel Buddy.
               </p>
               <a href="${inviteLink}" style="display:inline-block;background:#9f411d;color:#fff;text-decoration:none;border-radius:10px;padding:13px 22px;font-weight:700;">
                 Rejoindre le voyage
@@ -215,5 +195,5 @@ export async function POST(request: NextRequest) {
     ),
   );
 
-  return NextResponse.json({ success: true, sent: emailList.length });
+  return NextResponse.json({ success: true, sent: emailList.length, inviteLink });
 }

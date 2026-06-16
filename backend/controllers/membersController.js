@@ -10,7 +10,7 @@ async function getInviteCode(req, res) {
     res.json({ invite_code: inviteCode });
   } catch (err) {
     if (err.message === "FORBIDDEN") {
-      return res.status(403).json({ error: "Seul le owner peut inviter" });
+      return res.status(403).json({ error: "Seul l'admin du voyage peut inviter" });
     }
 
     res.status(500).json({ error: err.message });

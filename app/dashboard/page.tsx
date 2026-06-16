@@ -35,7 +35,7 @@ type DashboardTrip = {
     full_name: string;
     avatar_url: string | null;
     email?: string | null;
-    role: "owner" | "contributor" | "viewer";
+    role: "owner" | "admin" | "contributor" | "viewer";
     joined_at?: string | null;
   }[];
 };
@@ -119,7 +119,11 @@ export default function Dashboard() {
       const res = await fetch("/api/invitations", {
         headers: { Authorization: `Bearer ${currentToken}` },
       });
-      const data = await res.json();
+      const text = await res.text();
+      const data = text ? JSON.parse(text) : {};
+      if (!res.ok) {
+        throw new Error(data.error || "Erreur chargement invitations");
+      }
       setInvitations(Array.isArray(data.invitations) ? data.invitations : []);
     } catch (err) {
       console.error("Erreur chargement invitations:", err);

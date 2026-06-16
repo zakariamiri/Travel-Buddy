@@ -82,9 +82,33 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "Token manquant" }, { status: 401 });
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey =
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    return NextResponse.json(
+      {
+        invitations: [],
+        acceptedInvitations: [],
+        activityNotifications: [],
+        error: "Configuration Supabase manquante",
+      },
+      { status: 200 },
+    );
+  }
+
   const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    supabaseUrl,
+    supabaseKey,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    },
   );
 
   const {

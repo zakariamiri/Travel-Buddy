@@ -36,7 +36,11 @@ async function getInviteCode(tripId, userId) {
     .eq("user_id", userId)
     .single();
 
-  if (membershipError || !membership || membership.role !== "owner") {
+  if (
+    membershipError ||
+    !membership ||
+    !["owner", "admin"].includes(membership.role)
+  ) {
     throw new Error("FORBIDDEN");
   }
 
