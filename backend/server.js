@@ -43,6 +43,7 @@ app.use((req, res) => {
   res.status(404).json({ error: "Route API introuvable" });
 });
 app.use((err, req, res, next) => {
+  void next;
   console.error(err);
   res.status(500).json({ error: "Erreur serveur" });
 });

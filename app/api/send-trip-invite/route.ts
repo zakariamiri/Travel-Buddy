@@ -16,6 +16,10 @@ function createInviteCode() {
   ).join("");
 }
 
+function isMissingInvitationsTable(message?: string) {
+  return message?.includes("trip_invitations") && message.includes("schema cache");
+}
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   const token = authHeader?.startsWith("Bearer ")
@@ -99,6 +103,79 @@ export async function POST(request: NextRequest) {
   if (!inviteCode) {
     return NextResponse.json(
       { error: "Impossible de générer le lien" },
+      { status: 500 },
+    );
+  }
+
+  const { data: invitedUsers, error: invitedUsersError } = await supabase
+    .from("users")
+    .select("id, email")
+    .in("email", emailList);
+
+  if (invitedUsersError) {
+    return NextResponse.json(
+      { error: invitedUsersError.message },
+      { status: 500 },
+    );
+  }
+
+  const usersByEmail = new Map(
+    (invitedUsers || []).map((invitedUser) => [
+      invitedUser.email?.toLowerCase(),
+      invitedUser.id,
+    ]),
+  );
+  const invitedUserIds = [...new Set([...usersByEmail.values()].filter(Boolean))];
+
+  const { data: existingMembers, error: existingMembersError } =
+    invitedUserIds.length
+      ? await supabase
+          .from("trip_members")
+          .select("user_id")
+          .eq("trip_id", tripId)
+          .in("user_id", invitedUserIds)
+      : { data: [], error: null };
+
+  if (existingMembersError) {
+    return NextResponse.json(
+      { error: existingMembersError.message },
+      { status: 500 },
+    );
+  }
+
+  const existingMemberIds = new Set(
+    (existingMembers || []).map((member) => member.user_id),
+  );
+  const acceptedAt = new Date().toISOString();
+
+  const { error: invitationError } = await supabase
+    .from("trip_invitations")
+    .upsert(
+      emailList.map((email) => {
+        const invitedUserId = usersByEmail.get(email);
+        const isAlreadyMember = Boolean(
+          invitedUserId && existingMemberIds.has(invitedUserId),
+        );
+
+        return {
+          trip_id: tripId,
+          invited_email: email,
+          invite_code: inviteCode,
+          invited_by: user.id,
+          status: isAlreadyMember ? "accepted" : "pending",
+          accepted_at: isAlreadyMember ? acceptedAt : null,
+        };
+      }),
+      { onConflict: "trip_id,invited_email" },
+    );
+
+  if (invitationError) {
+    return NextResponse.json(
+      {
+        error: isMissingInvitationsTable(invitationError.message)
+          ? "La table trip_invitations n'existe pas encore dans Supabase. Execute la migration SQL avant d'envoyer des invitations avec notification."
+          : invitationError.message,
+      },
       { status: 500 },
     );
   }
