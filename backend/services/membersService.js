@@ -62,6 +62,9 @@ async function joinTripByCode(inviteCode, userId) {
 
   if (tripError || !trip) throw new Error("INVALID_INVITE_CODE");
 
+  const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
+  const authUser = authUserData?.user;
+
   const { data: existingMember, error: existingMemberError } = await supabase
     .from("trip_members")
     .select("trip_id, user_id, role")
@@ -70,10 +73,21 @@ async function joinTripByCode(inviteCode, userId) {
     .maybeSingle();
 
   if (existingMemberError) throw new Error(existingMemberError.message);
-  if (existingMember) return trip;
+  if (existingMember) {
+    if (authUser?.email) {
+      await supabase
+        .from("trip_invitations")
+        .update({
+          status: "accepted",
+          accepted_at: new Date().toISOString(),
+        })
+        .eq("trip_id", trip.id)
+        .ilike("invited_email", authUser.email);
+    }
 
-  const { data: authUserData } = await supabase.auth.admin.getUserById(userId);
-  const authUser = authUserData?.user;
+    return trip;
+  }
+
   const fullName =
     authUser?.user_metadata?.full_name ||
     authUser?.user_metadata?.name ||
@@ -98,6 +112,17 @@ async function joinTripByCode(inviteCode, userId) {
   });
 
   if (memberError) throw new Error(memberError.message);
+
+  if (authUser?.email) {
+    await supabase
+      .from("trip_invitations")
+      .update({
+        status: "accepted",
+        accepted_at: new Date().toISOString(),
+      })
+      .eq("trip_id", trip.id)
+      .ilike("invited_email", authUser.email);
+  }
 
   return trip;
 }

@@ -18,7 +18,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
-import { Plus } from "lucide-react";
+import { Bell, MailCheck, Plus, X } from "lucide-react";
 
 type DashboardTrip = {
   id: string;
@@ -40,6 +40,17 @@ type DashboardTrip = {
   }[];
 };
 
+type DashboardInvitation = {
+  id: string;
+  inviteCode: string;
+  createdAt: string;
+  trip: {
+    id: string;
+    name: string;
+    destination?: string | null;
+  } | null;
+};
+
 export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
@@ -52,6 +63,8 @@ export default function Dashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const [invitations, setInvitations] = useState<DashboardInvitation[]>([]);
+  const [showInvitations, setShowInvitations] = useState(true);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -99,9 +112,26 @@ export default function Dashboard() {
     }
   };
 
+  const fetchInvitations = async (currentToken: string) => {
+    if (!currentToken) return;
+
+    try {
+      const res = await fetch("/api/invitations", {
+        headers: { Authorization: `Bearer ${currentToken}` },
+      });
+      const data = await res.json();
+      setInvitations(Array.isArray(data.invitations) ? data.invitations : []);
+    } catch (err) {
+      console.error("Erreur chargement invitations:", err);
+    }
+  };
+
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    if (token) fetchTrips(token, filter);
+    if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      fetchTrips(token, filter);
+      fetchInvitations(token);
+    }
   }, [token, filter]);
 
   const handleCreateTrip = async () => {
@@ -338,6 +368,69 @@ export default function Dashboard() {
           </Dialog>
             </div>
           </section>
+
+          {showInvitations && invitations.length > 0 && (
+            <section className="mb-6 rounded-lg border border-[#f0c78d] bg-[#fff8ed] p-4 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="flex gap-3">
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-[#9f411d] text-white">
+                    <Bell className="size-5" />
+                  </span>
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h2 className="text-base font-bold text-[#5f240b]">
+                        You have a trip invitation
+                      </h2>
+                      <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#9f411d] shadow-sm">
+                        {invitations.length} pending
+                      </span>
+                    </div>
+                    <p className="mt-1 text-sm font-medium text-[#7a452d]">
+                      Check your email to accept the invitation.
+                    </p>
+                    <div className="mt-3 flex flex-col gap-2">
+                      {invitations.slice(0, 3).map((invitation) => (
+                        <div
+                          key={invitation.id}
+                          className="flex flex-col gap-2 rounded-lg border border-[#f2d9b8] bg-white px-3 py-2 sm:flex-row sm:items-center sm:justify-between"
+                        >
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {invitation.trip?.name || "Trip invitation"}
+                            </p>
+                            {invitation.trip?.destination && (
+                              <p className="text-xs text-muted-foreground">
+                                {invitation.trip.destination}
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            onClick={() =>
+                              router.push(`/join?code=${invitation.inviteCode}`)
+                            }
+                            className="h-9 rounded-lg bg-[#9f411d] px-3 text-xs font-bold text-white hover:bg-[#8a3412]"
+                          >
+                            <MailCheck className="mr-2 size-4" />
+                            Join
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowInvitations(false)}
+                  className="flex size-8 shrink-0 items-center justify-center rounded-md text-[#8a5535] transition hover:bg-white"
+                  aria-label="Dismiss invitation notification"
+                >
+                  <X className="size-4" />
+                </button>
+              </div>
+            </section>
+          )}
 
           <StatsCards />
 
