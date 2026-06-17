@@ -7,7 +7,7 @@ import { Crown } from 'lucide-react';
 import md5 from 'md5';
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { useParams, usePathname } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CiCalendar } from "react-icons/ci";
 import { MdHowToVote, MdOutlineTimeline } from "react-icons/md";
@@ -41,7 +41,7 @@ type TripMember = {
     full_name: string;
     avatar_url: string | null;
     email: string | null;
-    role: 'owner' | 'contributor' | 'viewer';
+    role: 'owner' | 'admin' | 'contributor' | 'viewer';
     joined_at: string | null;
 };
 
@@ -66,6 +66,9 @@ function getAvatarUrl(member: Pick<TripMember, 'avatar_url' | 'email'>) {
 export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null }) {
     const { state } = useSidebar();
     const pathname = usePathname();
+    const params = useParams();
+    const routeTripId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
+    const tripId = tripDetails?.id || routeTripId;
     const isCollapsed = state === 'collapsed';
     const [members, setMembers] = useState<TripMember[]>([]);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -76,9 +79,9 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
     const [inviteSending, setInviteSending] = useState(false);
 
     const items = [
-        { name: "Timeline", Icon: MdOutlineTimeline, link: `/dashboard/${tripDetails?.id}` },
-        { name: "Votes", Icon: MdHowToVote, link: `/dashboard/${tripDetails?.id}/votes` },
-        { name: "Budget", Icon: RiMoneyDollarBoxLine, link: `/dashboard/${tripDetails?.id}/budget` },
+        { name: "Timeline", Icon: MdOutlineTimeline, link: tripId ? `/dashboard/${tripId}` : '/dashboard' },
+        { name: "Votes", Icon: MdHowToVote, link: tripId ? `/dashboard/${tripId}/votes` : '/dashboard' },
+        { name: "Budget", Icon: RiMoneyDollarBoxLine, link: tripId ? `/dashboard/${tripId}/budget` : '/dashboard' },
     ];
 
     useEffect(() => {
@@ -142,14 +145,21 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
     const date = startMonth === endMonth
         ? `${startMonth} ${startDay}-${endDay}`
         : `${startMonth} ${startDay} - ${endMonth} ${endDay}`;
-    const owner = members.find((member) => member.role === 'owner');
-    const contributors = members.filter((member) => member.role !== 'owner');
+    const adminMember = members.find((member) => ['owner', 'admin'].includes(member.role));
+    const contributors = members.filter((member) => !['owner', 'admin'].includes(member.role));
     const visibleMembers = [
-        ...(owner ? [owner] : []),
+        ...(adminMember ? [adminMember] : []),
         ...contributors,
     ].slice(0, 4);
     const extraMembers = Math.max(members.length - visibleMembers.length, 0);
-    const isOwner = Boolean(owner && owner.id === currentUserId);
+    const canInvite = Boolean(
+        ['owner', 'admin'].includes(tripDetails.role || '') ||
+        members.some(
+            (member) =>
+                member.id === currentUserId &&
+                ['owner', 'admin'].includes(member.role),
+        ),
+    );
 
     const handleInviteSubmit = async () => {
         if (!tripDetails?.id || !token) return;
@@ -267,7 +277,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                         <p className='text-xs font-bold uppercase tracking-wide text-[#7f2a07]'>Members</p>
                                         <p className="text-xs text-[#9f5b3e]">Trip participants</p>
                                     </div>
-                                    {isOwner && (
+                                    {canInvite && (
                                         <button
                                             type="button"
                                             onClick={() => setInviteOpen(true)}
@@ -281,7 +291,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                     <div className='flex items-center -space-x-2'>
                                         {visibleMembers.map((member) => {
                                             const label = member.full_name || member.email || 'User';
-                                            const memberIsOwner = member.role === 'owner';
+                                            const memberIsOwner = ['owner', 'admin'].includes(member.role);
 
                                             return (
                                                 <Tooltip key={member.id}>

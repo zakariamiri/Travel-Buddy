@@ -82,7 +82,11 @@ function TopbarContent() {
         const res = await fetch("/api/invitations", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const payload = await res.json();
+        const text = await res.text();
+        const payload = text ? JSON.parse(text) : {};
+        if (!res.ok) {
+          throw new Error(payload.error || "Erreur chargement notifications");
+        }
         const incoming = Array.isArray(payload.invitations)
           ? payload.invitations.map((invitation: Omit<TopbarInvitation, "notificationType">) => ({
               ...invitation,
