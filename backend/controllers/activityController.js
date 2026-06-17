@@ -47,9 +47,22 @@ async function createActivity(req, res) {
 async function updateActivity(req, res) {
     try{
 
-        const { scheduled_date } = req.body;
+        const { scheduled_date,title,
+            type,
+    location,
+    notes,
+    image_url,
+    scheduled_time,
+    price_per_person, } = req.body;
         res.json(await activityService.updateActivity(req.params.tripId, req.params.activityId, req.user.id, {
-            scheduled_date
+            scheduled_date,
+            type,
+            title,
+            location,
+            notes,
+            image_url,
+            scheduled_time,
+            price_per_person
         }));
     } catch (err) {
         if (err.message === "FORBIDDEN") {

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { IconType } from 'react-icons';
 import {
   Select,
   SelectContent,
@@ -12,50 +13,43 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { apiUrl } from '@/lib/api'
-import { ACTIVITY_TYPES } from '@/types/types'
+import { Activity, ACTIVITY_TYPES } from '@/types/types'
 import { createClient } from '@/utils/supabase/client'
 import { FaCompass } from 'react-icons/fa'
 import { toast } from 'sonner'
 import { useTripContext } from './TripProvider'
 
-interface AddActivityFormProps {
+interface UpdateActivityFormProps {
   tripId: string | string[]
-  tripStartDate?: string
-  tripEndDate?: string
+  activity: Activity
   onSuccess?: () => void
   onCancel?: () => void
 }
 
-export default function AddActivityForm({
+export default function UpdateActivityForm({
   tripId,
-  tripStartDate,
+  activity,
   onSuccess,
   onCancel,
-}: AddActivityFormProps) {
+}: UpdateActivityFormProps) {
   const { tripDetails } = useTripContext()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [currentToken, setCurrentToken] = useState<string | null>(null)
   const memberCount = Math.max(1, tripDetails?.membersCount ?? 1)
 
-  const getInitialDate = () => {
-    if (!tripStartDate) return ''
-    return new Date(tripStartDate).toISOString().split('T')[0]
-  }
-
-  const [formData, setFormData] = useState({
-    type: 'activity',
-    title: '',
-    location: '',
-    notes: '',
-    image_url: '',
-    scheduled_date: getInitialDate(),
-    scheduled_time: '',
-    status: 'pending',
-    price_per_person: '',
-    lat: '',
-    lon: '',
-  })
+  const [formData, setFormData] = useState(() => ({
+  type: activity.type || 'activity',
+  title: activity.title || '',
+  location: activity.location || '',
+  notes: activity.notes || '',
+  image_url: activity.image_url || '',
+  scheduled_date: activity.scheduled_date
+    ? new Date(activity.scheduled_date).toISOString().split('T')[0]
+    : '',
+  scheduled_time: activity.scheduled_time || '',
+  price_per_person: activity.price_per_person?.toString() || '',
+}))
 
   const estimatedTotal = (Number(formData.price_per_person) || 0) * memberCount
 
@@ -115,8 +109,8 @@ export default function AddActivityForm({
 
     setLoading(true)
     try {
-      const response = await fetch(apiUrl(`/api/trips/${tripId}/activities`), {
-        method: 'POST',
+      const response = await fetch(apiUrl(`/api/trips/${tripId}/activities/${activity.id}`), {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${currentToken}`,
@@ -129,34 +123,18 @@ export default function AddActivityForm({
           image_url: formData.image_url || null,
           scheduled_date: formData.scheduled_date,
           scheduled_time: formData.scheduled_time || null,
-          status: formData.status,
           price_per_person: formData.price_per_person
             ? Number(formData.price_per_person)
             : 0,
-          lat: formData.lat ? Number(formData.lat) : null,
-          lon: formData.lon ? Number(formData.lon) : null,
         }),
       })
 
       const result = await response.json()
       if (!response.ok) {
-        throw new Error(result.error || 'Failed to create activity')
+        throw new Error(result.error || 'Failed to update activity')
       }
 
-      toast.success('Activity added successfully')
-      setFormData({
-        type: 'activity',
-        title: '',
-        location: '',
-        notes: '',
-        image_url: '',
-        scheduled_date: getInitialDate(),
-        scheduled_time: '',
-        status: 'pending',
-        price_per_person: '',
-        lat: '',
-        lon: '',
-      })
+      toast.success('Activity updated successfully')
       onSuccess?.()
     } catch (submitError) {
       const message =
@@ -171,7 +149,7 @@ export default function AddActivityForm({
   const selectedActivityType = ACTIVITY_TYPES.find(
     (type) => type.value === formData.type,
   )
-  const SelectedIcon = selectedActivityType?.icon || FaCompass
+const SelectedIcon = (selectedActivityType?.icon || FaCompass) as IconType;
   const categories = [...new Set(ACTIVITY_TYPES.map((type) => type.category))]
 
   return (
@@ -200,6 +178,8 @@ export default function AddActivityForm({
               <SelectValue>
                 <div className="flex items-center gap-2">
                   <SelectedIcon className="text-primary" />
+
+                  
                   <span>{selectedActivityType?.label || 'Select type'}</span>
                 </div>
               </SelectValue>
@@ -212,7 +192,7 @@ export default function AddActivityForm({
                   </div>
                   {ACTIVITY_TYPES.filter((type) => type.category === category).map(
                     (type) => {
-                      const Icon = type.icon
+                      const Icon = (type.icon) as IconType
                       return (
                         <SelectItem key={type.value} value={type.value}>
                           <span className="flex items-center gap-2">
@@ -320,7 +300,7 @@ export default function AddActivityForm({
           disabled={loading}
           className="min-w-36 bg-primary font-semibold text-white hover:bg-[#7f2a07]"
         >
-          {loading ? 'Adding...' : 'Add Activity'}
+          {loading ? 'Updating...' : 'Update Activity'}
         </Button>
       </div>
     </form>

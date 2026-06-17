@@ -140,22 +140,40 @@ async function createActivity(tripId, userId, { title, type, location, notes, im
 }
 
 
-async function updateActivity(tripId, activityId, userId, { scheduled_date }) {
+async function updateActivity(tripId, activityId, userId, {
+    type,
+    title,
+    location,
+    notes,
+    image_url,
+    scheduled_date,
+    scheduled_time,
+    price_per_person,
+}) {
     await assertTripOwner(tripId, userId);
 
-    const { data: activity, error } = await supabase.from("trip_items")
+    const { data: activity, error } = await supabase
+        .from("trip_items")
         .update({
-    
-            scheduled_date
+            type,
+            title,
+            location: location ?? null,
+            notes: notes ?? null,
+            image_url: image_url ?? null,
+            scheduled_date,
+            scheduled_time: scheduled_time ?? null,
+            price_per_person: price_per_person ?? 0,
         })
         .eq("id", activityId)
         .eq("trip_id", tripId)
         .select()
         .single();
+
     if (error) {
         console.error("Error updating activity:", error);
         throw error;
     }
+
     return activity;
 }
 

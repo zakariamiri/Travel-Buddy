@@ -5,6 +5,7 @@ import {
   FaWineGlassAlt, FaCoffee, FaIceCream, FaGamepad, FaTheaterMasks, FaShoppingBag,
   FaSpa, FaYinYang, FaRunning, FaHome, FaTree, FaAnchor, FaCar, FaHelicopter,
 } from "react-icons/fa"
+import { IconType } from 'react-icons';
 
 export default interface Trip {
     id: string;

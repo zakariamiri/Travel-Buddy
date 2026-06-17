@@ -18,7 +18,10 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
-import { Bell, MailCheck, Plus, X } from "lucide-react";
+import { Bell, Calendar as CalendarIcon, MailCheck, Plus, X } from "lucide-react";
+import TripCalendar from "@/components/TripCalendar";
+
+
 
 type DashboardTrip = {
   id: string;
@@ -65,6 +68,7 @@ export default function Dashboard() {
   const [formError, setFormError] = useState("");
   const [invitations, setInvitations] = useState<DashboardInvitation[]>([]);
   const [showInvitations, setShowInvitations] = useState(true);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -74,6 +78,9 @@ export default function Dashboard() {
     end_date: "",
     budget_total: "5000",
   });
+  const handleTripCalendarClick = (tripId: string) => {
+    router.push(`/dashboard/${tripId}`);
+  };
 
   useEffect(() => {
     const init = async () => {
@@ -128,7 +135,6 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (token) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchTrips(token, filter);
       fetchInvitations(token);
     }
@@ -217,155 +223,155 @@ export default function Dashboard() {
                   Create Trip
                 </DialogTrigger>
 
-            <DialogContent className="rounded-2xl max-w-md">
-              <DialogHeader>
-                <DialogTitle className="text-xl font-bold">
-                  Create New Trip
-                </DialogTitle>
-              </DialogHeader>
+                <DialogContent className="rounded-2xl max-w-md">
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-bold">
+                      Create New Trip
+                    </DialogTitle>
+                  </DialogHeader>
 
-              <div className="flex flex-col gap-4 mt-4">
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Trip Title
-                  </label>
-                  <Input
-                    placeholder="e.g. Paris Adventure"
-                    value={formData.name}
-                    onChange={(e) =>
-                      setFormData({ ...formData, name: e.target.value })
-                    }
-                  />
-                </div>
+                  <div className="flex flex-col gap-4 mt-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Trip Title
+                      </label>
+                      <Input
+                        placeholder="e.g. Paris Adventure"
+                        value={formData.name}
+                        onChange={(e) =>
+                          setFormData({ ...formData, name: e.target.value })
+                        }
+                      />
+                    </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Destination
-                  </label>
-                  <Input
-                    placeholder="e.g. Paris, France"
-                    value={formData.destination}
-                    onChange={(e) =>
-                      setFormData({ ...formData, destination: e.target.value })
-                    }
-                  />
-                </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Destination
+                      </label>
+                      <Input
+                        placeholder="e.g. Paris, France"
+                        value={formData.destination}
+                        onChange={(e) =>
+                          setFormData({ ...formData, destination: e.target.value })
+                        }
+                      />
+                    </div>
 
-                <div>
-                  <label className="text-sm font-medium text-gray-700">
-                    Cover Image
-                  </label>
-                  <Input
-                    type="file"
-                    accept="image/*"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0];
-                      if (!file) return;
+                    <div>
+                      <label className="text-sm font-medium text-gray-700">
+                        Cover Image
+                      </label>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
 
-                      const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-                      const { error } = await supabase.storage
-                        .from("trip-covers")
-                        .upload(fileName, file);
+                          const fileName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
+                          const { error } = await supabase.storage
+                            .from("trip-covers")
+                            .upload(fileName, file);
 
-                      if (error) {
-                        console.error("Upload error:", error.message);
-                        return;
-                      }
+                          if (error) {
+                            console.error("Upload error:", error.message);
+                            return;
+                          }
 
-                      const { data: urlData } = supabase.storage
-                        .from("trip-covers")
-                        .getPublicUrl(fileName);
+                          const { data: urlData } = supabase.storage
+                            .from("trip-covers")
+                            .getPublicUrl(fileName);
 
-                      setFormData({
-                        ...formData,
-                        cover_url: urlData.publicUrl,
-                      });
-                    }}
-                  />
+                          setFormData({
+                            ...formData,
+                            cover_url: urlData.publicUrl,
+                          });
+                        }}
+                      />
 
-                  {/* Aperçu de l'image */}
-                  {formData.cover_url && (
-                    <img
-                      src={formData.cover_url}
-                      alt="Trip cover preview"
-                      className="mt-2 h-24 w-full object-cover rounded-xl"
-                    />
-                  )}
-                </div>
+                      {/* Aperçu de l'image */}
+                      {formData.cover_url && (
+                        <img
+                          src={formData.cover_url}
+                          alt="Trip cover preview"
+                          className="mt-2 h-24 w-full object-cover rounded-xl"
+                        />
+                      )}
+                    </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      Start Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.start_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, start_date: e.target.value })
-                      }
-                    />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          Start Date
+                        </label>
+                        <Input
+                          type="date"
+                          value={formData.start_date}
+                          onChange={(e) =>
+                            setFormData({ ...formData, start_date: e.target.value })
+                          }
+                        />
+                      </div>
+
+                      <div>
+                        <label className="text-sm font-medium text-gray-700">
+                          End Date
+                        </label>
+                        <Input
+                          type="date"
+                          value={formData.end_date}
+                          onChange={(e) =>
+                            setFormData({ ...formData, end_date: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label
+                        htmlFor="trip-budget"
+                        className="text-sm font-medium text-gray-700"
+                      >
+                        Budget total (DH)
+                      </label>
+                      <div className="relative mt-1">
+                        <i className="ri-wallet-3-line pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
+                        <Input
+                          id="trip-budget"
+                          type="number"
+                          min="0"
+                          step="1"
+                          required
+                          value={formData.budget_total}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              budget_total: e.target.value,
+                            })
+                          }
+                          placeholder="5000"
+                          className="pl-10"
+                        />
+                      </div>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Ce montant sera utilise pour calculer le budget restant.
+                      </p>
+                    </div>
+
+                    {formError && (
+                      <p className="text-red-500 text-sm">{formError}</p>
+                    )}
+
+                    <Button
+                      onClick={handleCreateTrip}
+                      disabled={submitting}
+                      className="bg-[#9f411d] hover:bg-[#8a3412] text-white rounded-xl mt-2 py-5"
+                    >
+                      {submitting ? "Creating..." : "Create Trip"}
+                    </Button>
                   </div>
-
-                  <div>
-                    <label className="text-sm font-medium text-gray-700">
-                      End Date
-                    </label>
-                    <Input
-                      type="date"
-                      value={formData.end_date}
-                      onChange={(e) =>
-                        setFormData({ ...formData, end_date: e.target.value })
-                      }
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="trip-budget"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Budget total (DH)
-                  </label>
-                  <div className="relative mt-1">
-                    <i className="ri-wallet-3-line pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
-                    <Input
-                      id="trip-budget"
-                      type="number"
-                      min="0"
-                      step="1"
-                      required
-                      value={formData.budget_total}
-                      onChange={(e) =>
-                        setFormData({
-                          ...formData,
-                          budget_total: e.target.value,
-                        })
-                      }
-                      placeholder="5000"
-                      className="pl-10"
-                    />
-                  </div>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Ce montant sera utilise pour calculer le budget restant.
-                  </p>
-                </div>
-
-                {formError && (
-                  <p className="text-red-500 text-sm">{formError}</p>
-                )}
-
-                <Button
-                  onClick={handleCreateTrip}
-                  disabled={submitting}
-                  className="bg-[#9f411d] hover:bg-[#8a3412] text-white rounded-xl mt-2 py-5"
-                >
-                  {submitting ? "Creating..." : "Create Trip"}
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+                </DialogContent>
+              </Dialog>
             </div>
           </section>
 
@@ -434,7 +440,7 @@ export default function Dashboard() {
 
           <StatsCards />
 
-          {}
+          { }
           <div className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:flex-row sm:items-center">
             <div>
               <h2 className="text-2xl font-bold text-foreground">My Trips</h2>
@@ -446,60 +452,72 @@ export default function Dashboard() {
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold capitalize transition ${
-                    filter === f
+                  className={`rounded-md px-4 py-2 text-sm font-semibold capitalize transition ${filter === f
                       ? "bg-[#9f411d] text-white shadow"
                       : "text-gray-500 hover:text-[#7F2A07]"
-                  }`}
+                    }`}
                 >
                   {f === "all" ? "All" : f === "upcoming" ? "Upcoming" : "Past"}
                 </button>
               ))}
+              <Button
+                onClick={() => setShowCalendar(!showCalendar)}
+                className={` text-gray-500 hover:text-white  ${showCalendar ? " bg-[#9f411d]  text-white" : ""}`}
+              >
+                <CalendarIcon className="mr-2 size-4" />
+                Calendar
+              </Button>
             </div>
           </div>
 
-          {}
-          {loading ? (
-            <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-white">
-              <p className="text-gray-400 text-lg animate-pulse">
-                Loading trips...
-              </p>
+          {showCalendar ? (
+            <div className="mb-6">
+              <TripCalendar
+                trips={trips}
+                onTripClick={handleTripCalendarClick}
+              />
             </div>
+          ) : loading ? (
+          <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-white">
+            <p className="text-gray-400 text-lg animate-pulse">
+              Loading trips...
+            </p>
+          </div>
           ) : trips.length === 0 ? (
-            <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-white">
-              <i className="ri-map-pin-add-line text-4xl text-primary" />
-              <p className="text-lg font-semibold text-foreground">No trips yet</p>
-              <p className="text-sm text-muted-foreground">Create your first trip to start planning.</p>
-            
-            </div>
+          <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-white">
+            <i className="ri-map-pin-add-line text-4xl text-primary" />
+            <p className="text-lg font-semibold text-foreground">No trips yet</p>
+            <p className="text-sm text-muted-foreground">Create your first trip to start planning.</p>
+
+          </div>
           ) : (
-            <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {trips.map((trip) => (
-                <TripCard
-                  key={trip.id}
-                  id={trip.id}
-                  title={trip.name}
-                  destination={trip.destination}
-                  startDate={trip.start_date}
-                  endDate={trip.end_date}
-                  budgetTotal={trip.budget_total}
-                  date={
-                    trip.start_date && trip.end_date
-                      ? `${new Date(trip.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${new Date(trip.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
-                      : "Dates TBD"
-                  }
-                  image={
-                    trip.cover_url ||
-                    "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
-                  }
-                  coverUrl={trip.cover_url}
-                  status={trip.status}
-                  role={trip.role}
-                  members={trip.members || []}
-                  onChanged={() => fetchTrips(token, filter)}
-                />
-              ))}
-            </div>
+          <div className="mb-6 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {trips.map((trip) => (
+              <TripCard
+                key={trip.id}
+                id={trip.id}
+                title={trip.name}
+                destination={trip.destination}
+                startDate={trip.start_date}
+                endDate={trip.end_date}
+                budgetTotal={trip.budget_total}
+                date={
+                  trip.start_date && trip.end_date
+                    ? `${new Date(trip.start_date).toLocaleDateString("en-US", { month: "short", day: "numeric" })} – ${new Date(trip.end_date).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`
+                    : "Dates TBD"
+                }
+                image={
+                  trip.cover_url ||
+                  "https://images.unsplash.com/photo-1507525428034-b723cf961d3e"
+                }
+                coverUrl={trip.cover_url}
+                status={trip.status}
+                role={trip.role}
+                members={trip.members || []}
+                onChanged={() => fetchTrips(token, filter)}
+              />
+            ))}
+          </div>
           )}
         </main>
       </div>

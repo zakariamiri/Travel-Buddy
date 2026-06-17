@@ -1,4 +1,3 @@
-
 import React from 'react'
 import { Card, CardContent } from './ui/card'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
@@ -7,11 +6,21 @@ import { CiTrash, CiLocationOn } from "react-icons/ci"
 import { Activity, ACTIVITY_TYPES } from '@/types/types'
 import { FaCompass } from 'react-icons/fa'
 import { useDraggable } from '@dnd-kit/core';
+import {
+
+  Pencil
+
+} from "lucide-react";
+import UpdateActivityModal from './UpdateActivityModal';
+import { useTripContext } from './TripProvider';
+import { IconType } from 'react-icons'
 
 export default function ActivityCard({ activity, onDelete, canEdit = false }: { activity: Activity; onDelete: () => void; canEdit?: boolean }) {
   const scheduledTime = (activity.scheduled_time || '').slice(0, 5)
+  const { tripDetails } = useTripContext();
 
-  const {attributes, listeners, setNodeRef, transform} = useDraggable({
+
+  const { attributes, listeners, setNodeRef, transform } = useDraggable({
     id: activity.id,
     data: { activity },
     disabled: !canEdit,
@@ -23,16 +32,16 @@ export default function ActivityCard({ activity, onDelete, canEdit = false }: { 
 
 
   // Create a map of activity type values to icons for quick lookup
-  const typeToIcon = ACTIVITY_TYPES.reduce(
+  const typeToIcon = ACTIVITY_TYPES.reduce<Record<string, React.ElementType>>(
     (acc, type) => {
       acc[type.value] = type.icon
       return acc
     },
-    {} as Record<string, React.ElementType>
+    {}
   )
 
   const type = activity.type?.toLowerCase() || 'activity'
-  const Icon = typeToIcon[type] || FaCompass
+  const Icon = (typeToIcon[type] || FaCompass) as IconType
 
   return (
     <Card
@@ -66,12 +75,26 @@ export default function ActivityCard({ activity, onDelete, canEdit = false }: { 
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
-                  onClick={onDelete}
+                  onSelect={(e) => e.preventDefault()}
                   className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'
                 >
                   <CiTrash className='mr-2' />
                   Delete
                 </DropdownMenuItem>
+                <UpdateActivityModal
+                  tripId={tripDetails?.id || ''}
+                  activity={activity}
+                >
+                  <DropdownMenuItem
+                    onSelect={(e) => e.preventDefault()}
+                    className='text-gray-700 cursor-pointer hover:text-[#7f2a07] focus:text-gray-900 focus:bg-gray-50 w'
+                  >
+                    
+                    <Pencil className='mr-2' size={16} />
+                    Update
+                  </DropdownMenuItem>
+
+                </UpdateActivityModal>
               </DropdownMenuContent>
             </DropdownMenu>
           )}

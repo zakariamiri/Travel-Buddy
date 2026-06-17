@@ -63,9 +63,9 @@ export default function ActivityVoteCard({ activity, tripId,membersCount,onSucce
 
     const safeMembersCount = Math.max(1, membersCount)
     const progressValue = Math.min(100, (votes / safeMembersCount) * 100)
-    const ActivityIcon =
-        ACTIVITY_TYPES.find((type) => type.value === activity.type)?.icon ||
-        FaCompass
+    const ActivityIcon = (
+    ACTIVITY_TYPES.find((type) => type.value === activity.type)?.icon ?? FaCompass
+) as React.ComponentType<{ className?: string }>
     const statusStyles = {
         approved: 'bg-emerald-50 text-emerald-700 ring-emerald-200',
         rejected: 'bg-red-50 text-red-700 ring-red-200',
