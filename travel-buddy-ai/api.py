@@ -14,6 +14,7 @@ from functools import lru_cache
 import os
 from pathlib import Path
 import re
+import unicodedata
 from typing import Any
 
 from fastapi import FastAPI
@@ -160,6 +161,15 @@ def destination_guide(destination: str) -> dict[str, list[tuple[str, str, str]]]
     })
 
 
+def normalize_question(value: str) -> str:
+    normalized = unicodedata.normalize("NFD", value.lower())
+    return "".join(char for char in normalized if unicodedata.category(char) != "Mn")
+
+
+def has_any(question: str, words: list[str]) -> bool:
+    return any(word in question for word in words)
+
+
 def build_prompt(payload: ChatRequest, per_person: float, per_day: float, level: str) -> str:
     style_instruction = (
         "For this first answer, include destination and budget analysis before recommendations."
@@ -193,12 +203,19 @@ Budget level: {level}
 
 def fallback_answer(payload: ChatRequest, per_person: float, per_day: float, level: str) -> str:
     label = public_budget_level(level)
-    question = payload.message.lower()
+    question = normalize_question(payload.message)
     guide = destination_guide(payload.destination)
 
-    wants_restaurants = any(word in question for word in ["restaur", "resto", "restau", "manger", "food", "diner", "dejeuner"])
-    wants_plan = any(word in question for word in ["planning", "itineraire", "jour", "programme", "plan"])
-    wants_budget = any(word in question for word in ["budget", "prix", "depense", "economique", "cher"])
+    wants_restaurants = has_any(question, ["restaur", "resto", "restau", "manger", "food", "diner", "dejeuner"])
+    wants_hotels = has_any(question, ["hotel", "riad", "airbnb", "hostel", "logement", "hebergement", "dormir"])
+    wants_transport = has_any(question, ["transport", "bus", "train", "metro", "taxi", "voiture", "aeroport", "deplacement"])
+    wants_plan = has_any(question, ["planning", "itineraire", "jour", "programme", "plan"])
+    wants_budget = has_any(question, ["budget", "prix", "depense", "cout", "economique", "cher", "argent"])
+    wants_beach = has_any(question, ["plage", "beach", "mer", "baignade", "swim"])
+    wants_culture = has_any(question, ["culture", "musee", "museum", "histor", "monument", "local"])
+    wants_shopping = has_any(question, ["shopping", "marche", "souvenir", "mall", "boutique"])
+    wants_nightlife = has_any(question, ["soir", "nuit", "night", "club", "bar", "fete"])
+    wants_safety = has_any(question, ["securite", "danger", "eviter", "safe", "conseil"])
 
     if wants_restaurants:
         title = "Restaurants recommandes"
@@ -210,6 +227,26 @@ def fallback_answer(payload: ChatRequest, per_person: float, per_day: float, lev
             "- Eviter de reserver tous les repas en premium: garde une marge pour transport et activites."
         )
         tips = "Reserve 1 ou 2 bons restaurants, puis garde le reste flexible avec cafes, tapas ou street food."
+    elif wants_hotels:
+        title = "Hebergements conseilles"
+        recommendations = (
+            f"- Centre de {payload.destination} : pratique pour marcher et reduire le transport.\n"
+            "- Appartement/Airbnb : bon choix pour un groupe avec cuisine.\n"
+            "- Hotel 3-4 etoiles : confort moyen avec petit-dejeuner inclus.\n"
+            "- Hostel/chambre partagee : option economique si le budget est limite."
+        )
+        avoid = "- Eviter les logements loin du centre si le transport annule l'economie."
+        tips = "Compare prix total, distance, avis et annulation gratuite avant de reserver."
+    elif wants_transport:
+        title = "Transport recommande"
+        recommendations = (
+            f"- Marche + transport public dans {payload.destination} pour les trajets courts.\n"
+            "- Taxi/VTC le soir ou pour les zones mal desservies.\n"
+            "- Carte transport/journee si vous faites plusieurs trajets.\n"
+            "- Regrouper les activites par quartier pour economiser temps et budget."
+        )
+        avoid = "- Eviter de traverser la ville plusieurs fois dans la meme journee."
+        tips = "Je peux organiser les activites par zones pour minimiser le transport."
     elif wants_plan:
         title = "Planning propose"
         recommendations = "\n".join(
@@ -243,6 +280,56 @@ def fallback_answer(payload: ChatRequest, per_person: float, per_day: float, lev
             )
         avoid = "- Eviter les reservations non remboursables avant validation du groupe."
         tips = "Je peux aussi te proposer une repartition budget: repas, transport, activites, extras."
+    elif wants_beach:
+        title = "Plages et nature"
+        recommendations = (
+            "- Choisir une plage proche du logement pour limiter le transport.\n"
+            "- Prevoir une plage connue pour le coucher de soleil.\n"
+            "- Ajouter une activite nautique seulement si le budget le permet.\n"
+            "- Garder une demi-journee libre pour repos et photos."
+        )
+        avoid = "- Eviter les plages privees trop cheres si le groupe veut rester economique."
+        tips = "Bon rythme: plage le matin, centre-ville ou marche en fin de journee."
+    elif wants_culture:
+        title = "Culture et visites"
+        recommendations = (
+            f"- Centre historique de {payload.destination} : balade, photos et architecture.\n"
+            "- Musee ou monument principal : bon choix par temps chaud ou pluie.\n"
+            "- Visite guidee courte : utile pour comprendre l'histoire locale.\n"
+            "- Marche traditionnel : culture, cuisine et souvenirs."
+        )
+        avoid = "- Eviter d'enchainer trop de musees le meme jour."
+        tips = "Combine culture le matin et activite relax l'apres-midi."
+    elif wants_shopping:
+        title = "Shopping et souvenirs"
+        recommendations = (
+            f"- Marche local de {payload.destination} pour souvenirs et produits artisanaux.\n"
+            "- Boutiques du centre pour cadeaux rapides.\n"
+            "- Mall seulement si vous cherchez confort, climatisation et marques.\n"
+            "- Fixer un budget souvenirs par personne."
+        )
+        avoid = "- Eviter d'acheter au premier stand sans comparer les prix."
+        tips = "Garde le shopping vers la fin du voyage pour voyager leger."
+    elif wants_nightlife:
+        title = "Soirees"
+        recommendations = (
+            "- Bar calme en debut de soiree pour le groupe.\n"
+            "- Rooftop ou lieu avec vue si le budget est moyen/premium.\n"
+            f"- Quartier anime de {payload.destination}, mais proche du logement.\n"
+            "- Prevoir le transport retour avant de sortir."
+        )
+        avoid = "- Eviter les lieux sans avis fiables ou trop loin du logement."
+        tips = "Fixe une heure de retour et un budget boisson par personne."
+    elif wants_safety:
+        title = "Conseils securite"
+        recommendations = (
+            "- Garder copies des documents et partager l'adresse du logement.\n"
+            "- Utiliser transport officiel la nuit.\n"
+            "- Eviter de porter trop de cash.\n"
+            "- Garder un point de rendez-vous si le groupe se separe."
+        )
+        avoid = "- Eviter les zones isolees la nuit et les offres trop belles pour etre vraies."
+        tips = "Je peux aussi preparer une checklist depart pour le groupe."
     else:
         title = "Activites recommandees"
         recommendations = "\n".join(
