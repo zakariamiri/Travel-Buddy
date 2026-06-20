@@ -18,7 +18,16 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
-import { Bell, Bot, MailCheck, MessageCircle, Plus, Sparkles, X } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
+import {
+  Bell,
+  Bot,
+  MailCheck,
+  MessageCircle,
+  Plus,
+  Sparkles,
+  X,
+} from "lucide-react";
 
 type DashboardTrip = {
   id: string;
@@ -54,6 +63,7 @@ type DashboardInvitation = {
 export default function Dashboard() {
   const supabase = createClient();
   const router = useRouter();
+  const { t } = useLanguage();
 
   const [name, setName] = useState("");
   const [token, setToken] = useState("");
@@ -65,7 +75,6 @@ export default function Dashboard() {
   const [formError, setFormError] = useState("");
   const [invitations, setInvitations] = useState<DashboardInvitation[]>([]);
   const [showInvitations, setShowInvitations] = useState(true);
-  const [showCalendar, setShowCalendar] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -75,10 +84,6 @@ export default function Dashboard() {
     end_date: "",
     budget_total: "5000",
   });
-  const handleTripCalendarClick = (tripId: string) => {
-    router.push(`/dashboard/${tripId}`);
-  };
-
   useEffect(() => {
     const init = async () => {
       const { data } = await supabase.auth.getUser();
@@ -136,6 +141,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (token) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       fetchTrips(token, filter);
       fetchInvitations(token);
     }
@@ -210,14 +216,14 @@ export default function Dashboard() {
               <div>
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
                   <i className="ri-suitcase-3-line text-sm" />
-                  Travel Buddy Dashboard
+                  {t("travelBuddyDashboard")}
                 </div>
                 <h1 className="flex items-center gap-3 text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-                  Welcome, {name}
+                  {t("welcome")}, {name}
                   <img src="/au-revoir.png" alt="wave" className="size-12 md:size-14" />
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                  Where next? Your collaborative itineraries are ready for the next adventure.
+                  {t("dashboardSubtitle")}
                 </p>
               </div>
 
@@ -226,20 +232,20 @@ export default function Dashboard() {
                   <span className="flex size-7 items-center justify-center rounded-md bg-[#9f411d] text-white transition-colors group-hover:bg-[#7f2a07]">
                     <Plus className="size-4" />
                   </span>
-                  Create Trip
+                  {t("createTrip")}
                 </DialogTrigger>
 
                 <DialogContent className="rounded-2xl max-w-md">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold">
-                      Create New Trip
+                      {t("createNewTrip")}
                     </DialogTitle>
                   </DialogHeader>
 
                   <div className="flex flex-col gap-4 mt-4">
                     <div>
                       <label className="text-sm font-medium text-gray-700">
-                        Trip Title
+                        {t("tripTitle")}
                       </label>
                       <Input
                         placeholder="e.g. Paris Adventure"
@@ -252,7 +258,7 @@ export default function Dashboard() {
 
                     <div>
                       <label className="text-sm font-medium text-gray-700">
-                        Destination
+                        {t("destination")}
                       </label>
                       <Input
                         placeholder="e.g. Paris, France"
@@ -265,7 +271,7 @@ export default function Dashboard() {
 
                     <div>
                       <label className="text-sm font-medium text-gray-700">
-                        Cover Image
+                        {t("coverImage")}
                       </label>
                       <Input
                         type="file"
@@ -308,7 +314,7 @@ export default function Dashboard() {
                     <div className="grid grid-cols-2 gap-3">
                       <div>
                         <label className="text-sm font-medium text-gray-700">
-                          Start Date
+                          {t("startDate")}
                         </label>
                         <Input
                           type="date"
@@ -321,7 +327,7 @@ export default function Dashboard() {
 
                       <div>
                         <label className="text-sm font-medium text-gray-700">
-                          End Date
+                          {t("endDate")}
                         </label>
                         <Input
                           type="date"
@@ -338,7 +344,7 @@ export default function Dashboard() {
                         htmlFor="trip-budget"
                         className="text-sm font-medium text-gray-700"
                       >
-                        Budget total (DH)
+                        {t("totalBudgetDh")}
                       </label>
                       <div className="relative mt-1">
                         <i className="ri-wallet-3-line pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-primary" />
@@ -360,7 +366,7 @@ export default function Dashboard() {
                         />
                       </div>
                       <p className="mt-1 text-xs text-muted-foreground">
-                        Ce montant sera utilise pour calculer le budget restant.
+                        {t("budgetHint")}
                       </p>
                     </div>
 
@@ -373,7 +379,7 @@ export default function Dashboard() {
                       disabled={submitting}
                       className="bg-[#9f411d] hover:bg-[#8a3412] text-white rounded-xl mt-2 py-5"
                     >
-                      {submitting ? "Creating..." : "Create Trip"}
+                      {submitting ? t("creating") : t("createTrip")}
                     </Button>
                   </div>
                 </DialogContent>
@@ -391,14 +397,14 @@ export default function Dashboard() {
                   <div>
                     <div className="flex flex-wrap items-center gap-2">
                       <h2 className="text-base font-bold text-[#5f240b]">
-                        You have a trip invitation
+                        {t("tripInvitation")}
                       </h2>
                       <span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold text-[#9f411d] shadow-sm">
-                        {invitations.length} pending
+                        {invitations.length} {t("pendingInvitation")}
                       </span>
                     </div>
                     <p className="mt-1 text-sm font-medium text-[#7a452d]">
-                      Check your email to accept the invitation.
+                      {t("checkEmailInvitation")}
                     </p>
                     <div className="mt-3 flex flex-col gap-2">
                       {invitations.slice(0, 3).map((invitation) => (
@@ -424,7 +430,7 @@ export default function Dashboard() {
                             className="h-9 rounded-lg bg-[#9f411d] px-3 text-xs font-bold text-white hover:bg-[#8a3412]"
                           >
                             <MailCheck className="mr-2 size-4" />
-                            Join
+                            {t("join")}
                           </Button>
                         </div>
                       ))}
@@ -460,13 +466,13 @@ export default function Dashboard() {
                 <div>
                   <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-bold text-[#8a3412]">
                     <Sparkles className="size-3.5" />
-                    Assistant IA Travel-Buddy
+                    {t("assistantBadge")}
                   </div>
                   <h2 className="text-2xl font-bold text-foreground">
-                    Besoin d&apos;idees selon ton budget ?
+                    {t("assistantCtaTitle")}
                   </h2>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
-                    Le chatbot utilise la destination, le budget total, les membres et les dates pour proposer des activites adaptees.
+                    {t("assistantCtaText")}
                   </p>
                 </div>
               </div>
@@ -478,7 +484,7 @@ export default function Dashboard() {
                 className="group flex h-11 shrink-0 items-center gap-2 rounded-lg bg-[#9f411d] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(159,65,29,0.22)] transition hover:-translate-y-0.5 hover:bg-[#7f3417] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
               >
                 <MessageCircle className="size-4" />
-                Ouvrir le chatbot
+                {t("openChatbot")}
               </button>
             </div>
           </section>
@@ -486,8 +492,8 @@ export default function Dashboard() {
           {}
           <div className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:flex-row sm:items-center">
             <div>
-              <h2 className="text-2xl font-bold text-foreground">My Trips</h2>
-              <p className="text-sm text-muted-foreground">All your plans in one quiet place.</p>
+              <h2 className="text-2xl font-bold text-foreground">{t("myTrips")}</h2>
+              <p className="text-sm text-muted-foreground">{t("tripsSubtitle")}</p>
             </div>
 
             <div className="flex w-fit gap-1 rounded-lg bg-[#f3e4da] p-1 shadow-inner">
@@ -500,37 +506,23 @@ export default function Dashboard() {
                       : "text-gray-500 hover:text-[#7F2A07]"
                     }`}
                 >
-                  {f === "all" ? "All" : f === "upcoming" ? "Upcoming" : "Past"}
+                  {f === "all" ? t("all") : f === "upcoming" ? t("upcoming") : t("past")}
                 </button>
               ))}
-              <Button
-                onClick={() => setShowCalendar(!showCalendar)}
-                className={` text-gray-500 hover:text-white  ${showCalendar ? " bg-[#9f411d]  text-white" : ""}`}
-              >
-                <CalendarIcon className="mr-2 size-4" />
-                Calendar
-              </Button>
             </div>
           </div>
 
-          {showCalendar ? (
-            <div className="mb-6">
-              <TripCalendar
-                trips={trips}
-                onTripClick={handleTripCalendarClick}
-              />
-            </div>
-          ) : loading ? (
+          {loading ? (
           <div className="flex h-48 items-center justify-center rounded-lg border border-dashed bg-white">
             <p className="text-gray-400 text-lg animate-pulse">
-              Loading trips...
+              {t("loadingTrips")}
             </p>
           </div>
           ) : trips.length === 0 ? (
           <div className="flex h-56 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-white">
             <i className="ri-map-pin-add-line text-4xl text-primary" />
-            <p className="text-lg font-semibold text-foreground">No trips yet</p>
-            <p className="text-sm text-muted-foreground">Create your first trip to start planning.</p>
+            <p className="text-lg font-semibold text-foreground">{t("noTripsYet")}</p>
+            <p className="text-sm text-muted-foreground">{t("createFirstTrip")}</p>
 
           </div>
           ) : (

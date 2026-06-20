@@ -5,6 +5,7 @@ import md5 from "md5";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type TopbarInvitation = {
   id: string;
@@ -35,6 +36,7 @@ type TopbarNotification = TopbarInvitation | TopbarActivityNotification;
 
 function TopbarContent() {
   const supabase = createClient();
+  const { language, setLanguage, t } = useLanguage();
 
   const [name, setName] = useState("");
   const [avatar, setAvatar] = useState("");
@@ -125,7 +127,7 @@ function TopbarContent() {
         <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9f411d]" />
           <Input
-            placeholder="Search destinations..."
+            placeholder={t("searchDestinations")}
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
             className="h-10 rounded-lg border-[#ead9bf] bg-[#fff8ec] pl-9 text-sm shadow-none focus-visible:ring-[#c9603a]/30"
@@ -152,12 +154,12 @@ function TopbarContent() {
           {notificationsOpen && (
             <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-[#ead9bf] bg-white p-2 shadow-xl">
               <div className="px-2 py-2 text-sm font-bold text-gray-900">
-                Notifications
+                {t("notifications")}
               </div>
 
               {notifications.length === 0 ? (
                 <div className="px-2 py-4 text-sm text-muted-foreground">
-                  No invitations yet.
+                  {t("noInvitations")}
                 </div>
               ) : (
                 <div className="space-y-1">
@@ -186,14 +188,14 @@ function TopbarContent() {
                       <span>
                         <span className="block text-sm font-semibold text-gray-900">
                           {notification.notificationType === "incoming"
-                            ? "You have a trip invitation"
+                            ? t("tripInvitation")
                             : notification.notificationType === "accepted"
-                              ? "Invitation accepted"
-                              : "Nouvelle activite a voter"}
+                              ? t("invitationAccepted")
+                              : t("newActivityVote")}
                         </span>
                         <span className="mt-0.5 block text-xs text-muted-foreground">
                           {notification.notificationType === "accepted"
-                            ? `${notification.invitedEmail || "A member"} accepted`
+                            ? `${notification.invitedEmail || t("memberAccepted")}`
                             : notification.trip?.name || "Trip notification"}
                           {notification.trip?.destination
                             ? ` - ${notification.trip.destination}`
@@ -201,10 +203,10 @@ function TopbarContent() {
                         </span>
                         <span className="mt-1 block text-xs font-medium text-[#9f411d]">
                           {notification.notificationType === "incoming"
-                            ? "Check your email or click to join."
+                            ? t("checkEmailJoin")
                             : notification.notificationType === "activity_created"
                               ? notification.message
-                              : notification.trip?.name || "Open trip dashboard."}
+                              : notification.trip?.name || t("openTripDashboard")}
                         </span>
                       </span>
                     </button>
@@ -213,6 +215,23 @@ function TopbarContent() {
               )}
             </div>
           )}
+        </div>
+
+        <div className="flex rounded-lg border border-[#ead9bf] bg-[#fff8ec] p-1 shadow-sm">
+          {(["en", "fr"] as const).map((item) => (
+            <button
+              key={item}
+              type="button"
+              onClick={() => setLanguage(item)}
+              className={`h-8 rounded-md px-2.5 text-xs font-bold transition ${
+                language === item
+                  ? "bg-[#9f411d] text-white shadow-sm"
+                  : "text-[#7f2a07] hover:bg-white"
+              }`}
+            >
+              {item.toUpperCase()}
+            </button>
+          ))}
         </div>
 
         <div className="flex items-center gap-3 rounded-lg border border-[#ead9bf] bg-white px-2.5 py-1.5 shadow-sm">

@@ -6,9 +6,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CheckCircle2, Clock3, ThumbsUp, XCircle } from "lucide-react";
 import { useParams } from "next/navigation";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 
 
 export default function Votespage() {
+    const { t } = useLanguage();
     const params = useParams();
     const tripId = Array.isArray(params.id) ? params.id[0] : (params.id as string);
     const router = useRouter()
@@ -19,10 +21,10 @@ export default function Votespage() {
     } = useTripContext();
 
     const filters = [
-        { value: "All", label: "All", icon: ThumbsUp, count: activities.length },
-        { value: "pending", label: "Pending", icon: Clock3, count: activities.filter((activity) => activity.status === "pending").length },
-        { value: "approved", label: "Approved", icon: CheckCircle2, count: activities.filter((activity) => activity.status === "approved").length },
-        { value: "rejected", label: "Rejected", icon: XCircle, count: activities.filter((activity) => activity.status === "rejected").length },
+        { value: "All", label: t("all"), icon: ThumbsUp, count: activities.length },
+        { value: "pending", label: t("pending"), icon: Clock3, count: activities.filter((activity) => activity.status === "pending").length },
+        { value: "approved", label: t("approved"), icon: CheckCircle2, count: activities.filter((activity) => activity.status === "approved").length },
+        { value: "rejected", label: t("rejected"), icon: XCircle, count: activities.filter((activity) => activity.status === "rejected").length },
     ];
 
     const getFilteredActivities = (filter: string) => {
@@ -37,18 +39,18 @@ export default function Votespage() {
                     <div>
                         <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
                             <ThumbsUp className="size-3.5" />
-                            Activity Voting
+                            {t("activityVoting")}
                         </div>
                         <h1 className="text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-                            Vote on Activities
+                            {t("voteOnActivities")}
                         </h1>
                         <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-                            Choisissez les activites que vous voulez garder dans le voyage.
+                            {t("voteText")}
                         </p>
                     </div>
                     <div className="rounded-lg border bg-white px-4 py-3 text-sm shadow-sm">
-                        <span className="text-muted-foreground">Trip members</span>
-                        <p className="font-semibold text-foreground">{tripDetails?.membersCount ?? 0} participants</p>
+                        <span className="text-muted-foreground">{t("tripMembers")}</span>
+                        <p className="font-semibold text-foreground">{tripDetails?.membersCount ?? 0} {t("participants")}</p>
                     </div>
                 </header>
 
@@ -57,21 +59,21 @@ export default function Votespage() {
                         <div className="flex size-11 items-center justify-center rounded-lg bg-primary/10 text-primary">
                             <ThumbsUp className="size-5" />
                         </div>
-                        <p className="mt-5 text-sm font-medium text-muted-foreground">Total activities</p>
+                        <p className="mt-5 text-sm font-medium text-muted-foreground">{t("totalActivities")}</p>
                         <p className="mt-1 text-2xl font-bold text-foreground">{activities.length}</p>
                     </div>
                     <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                         <div className="flex size-11 items-center justify-center rounded-lg bg-secondary/10 text-secondary">
                             <CheckCircle2 className="size-5" />
                         </div>
-                        <p className="mt-5 text-sm font-medium text-muted-foreground">Approved</p>
+                        <p className="mt-5 text-sm font-medium text-muted-foreground">{t("approved")}</p>
                         <p className="mt-1 text-2xl font-bold text-foreground">{filters[2].count}</p>
                     </div>
                     <div className="rounded-lg border bg-white p-5 shadow-[0_8px_24px_rgba(127,42,7,0.1)] transition-shadow hover:shadow-[0_12px_30px_rgba(127,42,7,0.15)]">
                         <div className="flex size-11 items-center justify-center rounded-lg bg-accent/20 text-[#9f411d]">
                             <Clock3 className="size-5" />
                         </div>
-                        <p className="mt-5 text-sm font-medium text-muted-foreground">Waiting votes</p>
+                        <p className="mt-5 text-sm font-medium text-muted-foreground">{t("waitingVotes")}</p>
                         <p className="mt-1 text-2xl font-bold text-foreground">{filters[1].count}</p>
                     </div>
                 </section>
@@ -103,9 +105,9 @@ export default function Votespage() {
                             <TabsContent key={filter.value} value={filter.value} className="mt-6">
                                 {filteredActivities.length === 0 ? (
                                     <div className="rounded-lg border border-dashed bg-white p-10 text-center shadow-[0_8px_24px_rgba(127,42,7,0.1)]">
-                                        <p className="font-semibold text-foreground">No activities here</p>
+                                        <p className="font-semibold text-foreground">{t("noActivitiesHere")}</p>
                                         <p className="mt-1 text-sm text-muted-foreground">
-                                            Les activites apparaitront ici quand elles correspondent a ce statut.
+                                            {t("activitiesStatusHint")}
                                         </p>
                                     </div>
                                 ) : (

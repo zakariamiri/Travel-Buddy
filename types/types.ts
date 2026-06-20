@@ -31,7 +31,7 @@ export default interface Trip {
 export interface ActivityType {
   value: string
   label: string
-  icon: React.ElementType
+  icon: IconType
   category: string
 }
 

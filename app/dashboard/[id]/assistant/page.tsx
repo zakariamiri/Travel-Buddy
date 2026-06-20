@@ -13,6 +13,7 @@ import {
 import { toast } from 'sonner'
 import { useTripContext } from '@/components/TripProvider'
 import { Button } from '@/components/ui/button'
+import { useLanguage } from '@/components/LanguageProvider'
 
 type Message = {
   role: 'assistant' | 'user'
@@ -34,6 +35,7 @@ function getDurationDays(startDate?: string, endDate?: string) {
 
 export default function AssistantPage() {
   const { tripDetails } = useTripContext()
+  const { t } = useLanguage()
   const [input, setInput] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
@@ -131,31 +133,31 @@ export default function AssistantPage() {
               Travel AI
             </div>
             <h1 className="text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-              Assistant Travel-Buddy
+              {t("assistantPageTitle")}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Demande des recommandations adaptees au budget total, aux membres et a la duree du voyage.
+              {t("assistantPageText")}
             </p>
           </div>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
               <WalletCards className="mb-2 size-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Budget</p>
+              <p className="text-xs text-muted-foreground">{t("budget")}</p>
               <p className="text-sm font-bold">{Math.round(tripContext.totalBudget)} {tripContext.currency}</p>
             </div>
             <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
               <Users className="mb-2 size-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Membres</p>
+              <p className="text-xs text-muted-foreground">{t("members")}</p>
               <p className="text-sm font-bold">{tripContext.numberOfMembers}</p>
             </div>
             <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
               <CalendarDays className="mb-2 size-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Duree</p>
+              <p className="text-xs text-muted-foreground">{t("duration")}</p>
               <p className="text-sm font-bold">{tripContext.durationDays} jours</p>
             </div>
             <div className="rounded-lg border bg-white px-4 py-3 shadow-sm">
               <Bot className="mb-2 size-4 text-primary" />
-              <p className="text-xs text-muted-foreground">Niveau</p>
+              <p className="text-xs text-muted-foreground">{t("level")}</p>
               <p className="text-sm font-bold">{tripContext.budgetLevel}</p>
             </div>
           </div>
@@ -166,20 +168,20 @@ export default function AssistantPage() {
             <div className="flex size-12 items-center justify-center rounded-lg bg-[#f6ddca] text-primary">
               <Bot className="size-6" />
             </div>
-            <h2 className="mt-5 text-lg font-bold">Contexte du voyage</h2>
+            <h2 className="mt-5 text-lg font-bold">{t("tripContext")}</h2>
             <div className="mt-4 space-y-3 text-sm">
               <div className="rounded-lg bg-[#fff8ec] p-3">
-                <p className="text-muted-foreground">Destination</p>
+                <p className="text-muted-foreground">{t("destination")}</p>
                 <p className="font-semibold">{tripContext.destination}</p>
               </div>
               <div className="rounded-lg bg-[#fff8ec] p-3">
-                <p className="text-muted-foreground">Budget/personne/jour</p>
+                <p className="text-muted-foreground">{t("budgetPerPersonDay")}</p>
                 <p className="font-semibold">
                   {Math.round(tripContext.budgetPerDay)} {tripContext.currency}
                 </p>
               </div>
               <div className="rounded-lg bg-[#fff8ec] p-3">
-                <p className="text-muted-foreground">Regle appliquee</p>
+                <p className="text-muted-foreground">{t("appliedRule")}</p>
                 <p className="font-semibold">{tripContext.budgetLevel}</p>
               </div>
             </div>
@@ -187,9 +189,9 @@ export default function AssistantPage() {
 
           <section className="flex min-h-0 flex-col rounded-lg border border-[#ead9bf] bg-white shadow-[0_10px_30px_rgba(127,42,7,0.1)]">
             <div className="border-b border-[#ead9bf] px-5 py-4">
-              <h2 className="font-bold">Discussion</h2>
+              <h2 className="font-bold">{t("discussion")}</h2>
               <p className="text-sm text-muted-foreground">
-                L&apos;assistant utilise automatiquement le budget du dashboard.
+                {t("assistantUsesBudget")}
               </p>
             </div>
 
@@ -213,7 +215,7 @@ export default function AssistantPage() {
                 <div className="flex justify-start">
                   <div className="flex items-center gap-2 rounded-lg border border-[#ead9bf] bg-[#fff8ec] px-4 py-3 text-sm text-muted-foreground">
                     <Loader2 className="size-4 animate-spin" />
-                    Assistant en train de reflechir...
+                    {t("assistantThinking")}
                   </div>
                 </div>
               )}
@@ -230,7 +232,7 @@ export default function AssistantPage() {
                       handleSend()
                     }
                   }}
-                  placeholder="Ex: propose-moi des activites economiques pour ce voyage..."
+                  placeholder={t("assistantPlaceholder")}
                   rows={1}
                   className="max-h-24 min-h-11 flex-1 resize-none rounded-lg border border-[#ead9bf] bg-[#fffaf4] px-3 py-2.5 text-sm outline-none transition focus:border-[#c9603a] focus:ring-3 focus:ring-[#c9603a]/20"
                 />
@@ -240,7 +242,7 @@ export default function AssistantPage() {
                   className="h-11 rounded-lg bg-[#9f411d] px-4 text-sm font-bold text-white hover:bg-[#7f3417]"
                 >
                   {loading ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />}
-                  <span className="hidden sm:inline">Envoyer</span>
+                  <span className="hidden sm:inline">{t("send")}</span>
                 </Button>
               </div>
             </div>

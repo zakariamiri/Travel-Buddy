@@ -35,6 +35,7 @@ import {
     useSidebar
 } from './ui/sidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useLanguage } from './LanguageProvider';
 
 type TripMember = {
     id: string;
@@ -64,6 +65,7 @@ function getAvatarUrl(member: Pick<TripMember, 'avatar_url' | 'email'>) {
 }
 
 export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null }) {
+    const { t } = useLanguage();
     const { state } = useSidebar();
     const pathname = usePathname();
     const params = useParams();
@@ -79,10 +81,10 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
     const [inviteSending, setInviteSending] = useState(false);
 
     const items = [
-        { name: "Timeline", Icon: MdOutlineTimeline, link: tripId ? `/dashboard/${tripId}` : '/dashboard' },
-        { name: "Votes", Icon: MdHowToVote, link: tripId ? `/dashboard/${tripId}/votes` : '/dashboard' },
-        { name: "Budget", Icon: RiMoneyDollarBoxLine, link: tripId ? `/dashboard/${tripId}/budget` : '/dashboard' },
-        { name: "Assistant", Icon: Bot, link: tripId ? `/dashboard/${tripId}/assistant` : '/dashboard' },
+        { name: t("timeline"), Icon: MdOutlineTimeline, link: tripId ? `/dashboard/${tripId}` : '/dashboard' },
+        { name: t("votes"), Icon: MdHowToVote, link: tripId ? `/dashboard/${tripId}/votes` : '/dashboard' },
+        { name: t("budget"), Icon: RiMoneyDollarBoxLine, link: tripId ? `/dashboard/${tripId}/budget` : '/dashboard' },
+        { name: t("assistant"), Icon: Bot, link: tripId ? `/dashboard/${tripId}/assistant` : '/dashboard' },
     ];
 
     useEffect(() => {
@@ -262,7 +264,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                                             {tripDetails.destination}
                                         </span>
                                         <span className="rounded-full border border-white/40 bg-[#f6ddca]/95 px-2.5 py-1 text-xs font-bold text-[#8a3412] shadow-sm backdrop-blur">
-                                            {members.length || tripDetails.membersCount || 0} members
+                                            {members.length || tripDetails.membersCount || 0} {t("members").toLowerCase()}
                                         </span>
                                     </div>
                                 </div>
@@ -275,7 +277,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                             <div className="rounded-lg border border-[#e4b997] bg-[#f6ddca] p-3 shadow-sm">
                                 <div className='mb-3 flex items-center justify-between'>
                                     <div>
-                                        <p className='text-xs font-bold uppercase tracking-wide text-[#7f2a07]'>Members</p>
+                                        <p className='text-xs font-bold uppercase tracking-wide text-[#7f2a07]'>{t("members")}</p>
                                         <p className="text-xs text-[#9f5b3e]">Trip participants</p>
                                     </div>
                                     {canInvite && (
@@ -334,7 +336,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                         <TooltipProvider>
                             {!isCollapsed && (
                                 <p className="mb-2 px-2 text-xs font-bold uppercase tracking-wide text-gray-600">
-                                    Navigation
+                                    {t("navigation")}
                                 </p>
                             )}
                             <ul className='w-full space-y-1'>
@@ -407,7 +409,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                             disabled={inviteSending}
                             className="bg-[#9f411d] hover:bg-[#8a3412] text-white rounded-xl mt-2 py-5"
                         >
-                            {inviteSending ? 'Envoi...' : 'Envoyer invitation'}
+                            {inviteSending ? t("sending") : t("sendInvitation")}
                         </Button>
                     </div>
                 </DialogContent>

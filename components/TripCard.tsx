@@ -44,12 +44,12 @@ type TripMember = {
   full_name: string;
   avatar_url: string | null;
   email: string | null;
-  role: "owner" | "contributor" | "viewer";
+  role: "owner" | "admin" | "contributor" | "viewer";
   joined_at: string | null;
 };
 
 type PartialTripMember = Partial<Omit<TripMember, "role">> & {
-  role?: "owner" | "contributor" | "viewer";
+  role?: "owner" | "admin" | "contributor" | "viewer";
 };
 
 type TripCardProps = {
