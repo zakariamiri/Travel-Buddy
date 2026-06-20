@@ -14,6 +14,7 @@ export async function middleware(request: NextRequest) {
     "/join",
     "/api/invitations",
     "/api/send-trip-invite",
+    "/api/travel-ai",
     "/api/send-reset-email",
   ];
   const isPublicRoute = publicRoutes.some((route) =>

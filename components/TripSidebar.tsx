@@ -3,7 +3,7 @@
 import Trip from '@/types/types';
 import { apiUrl } from '@/lib/api';
 import { createClient } from '@/utils/supabase/client';
-import { Crown } from 'lucide-react';
+import { Bot, Crown } from 'lucide-react';
 import md5 from 'md5';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -82,6 +82,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
         { name: "Timeline", Icon: MdOutlineTimeline, link: tripId ? `/dashboard/${tripId}` : '/dashboard' },
         { name: "Votes", Icon: MdHowToVote, link: tripId ? `/dashboard/${tripId}/votes` : '/dashboard' },
         { name: "Budget", Icon: RiMoneyDollarBoxLine, link: tripId ? `/dashboard/${tripId}/budget` : '/dashboard' },
+        { name: "Assistant", Icon: Bot, link: tripId ? `/dashboard/${tripId}/assistant` : '/dashboard' },
     ];
 
     useEffect(() => {

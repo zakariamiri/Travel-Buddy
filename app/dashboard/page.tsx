@@ -18,10 +18,7 @@ import { useEffect, useState } from "react";
 import { createClient } from "@/utils/supabase/client";
 import { useRouter } from "next/navigation";
 import { apiUrl } from "@/lib/api";
-import { Bell, Calendar as CalendarIcon, MailCheck, Plus, X } from "lucide-react";
-import TripCalendar from "@/components/TripCalendar";
-
-
+import { Bell, Bot, MailCheck, MessageCircle, Plus, Sparkles, X } from "lucide-react";
 
 type DashboardTrip = {
   id: string;
@@ -143,6 +140,11 @@ export default function Dashboard() {
       fetchInvitations(token);
     }
   }, [token, filter]);
+
+  const assistantTrip =
+    trips.find((trip) => trip.status === "ONGOING") ||
+    trips.find((trip) => trip.status === "PLANNING") ||
+    trips[0];
 
   const handleCreateTrip = async () => {
     setFormError("");
@@ -444,7 +446,44 @@ export default function Dashboard() {
 
           <StatsCards />
 
-          { }
+          <section className="mb-6 overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_16px_40px_rgba(127,42,7,0.12)]">
+            <div className="flex flex-col items-start justify-between gap-5 bg-[linear-gradient(135deg,#fffaf4_0%,#ffffff_48%,#f5e5dc_100%)] p-5 md:flex-row md:items-center md:p-6">
+              <div className="flex items-center gap-4">
+                <div className="relative flex size-20 shrink-0 items-center justify-center">
+                  <span className="absolute inset-0 rounded-full bg-[#d76135]/20 animate-ping" />
+                  <span className="absolute inset-2 rounded-full bg-[#f2c8ad]/60 animate-pulse" />
+                  <span className="relative flex size-14 items-center justify-center rounded-full bg-[#9f411d] text-white shadow-[0_12px_28px_rgba(159,65,29,0.32)]">
+                    <Bot className="size-7" />
+                  </span>
+                </div>
+
+                <div>
+                  <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-bold text-[#8a3412]">
+                    <Sparkles className="size-3.5" />
+                    Assistant IA Travel-Buddy
+                  </div>
+                  <h2 className="text-2xl font-bold text-foreground">
+                    Besoin d&apos;idees selon ton budget ?
+                  </h2>
+                  <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+                    Le chatbot utilise la destination, le budget total, les membres et les dates pour proposer des activites adaptees.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                disabled={!assistantTrip}
+                onClick={() => assistantTrip && router.push(`/dashboard/${assistantTrip.id}/assistant`)}
+                className="group flex h-11 shrink-0 items-center gap-2 rounded-lg bg-[#9f411d] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(159,65,29,0.22)] transition hover:-translate-y-0.5 hover:bg-[#7f3417] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+              >
+                <MessageCircle className="size-4" />
+                Ouvrir le chatbot
+              </button>
+            </div>
+          </section>
+
+          {}
           <div className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:flex-row sm:items-center">
             <div>
               <h2 className="text-2xl font-bold text-foreground">My Trips</h2>
