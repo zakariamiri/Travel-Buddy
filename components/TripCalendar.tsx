@@ -18,7 +18,7 @@ type DashboardTrip = {
     full_name: string;
     avatar_url: string | null;
     email?: string | null;
-    role: "owner" | "contributor" | "viewer";
+    role: "owner" | "admin" | "contributor" | "viewer";
     joined_at?: string | null;
   }[];
 };
