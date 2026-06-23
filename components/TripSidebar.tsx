@@ -7,7 +7,7 @@ import { Crown } from 'lucide-react';
 import md5 from 'md5';
 import Image from 'next/image';
 import Link from 'next/link';
-import { useParams, usePathname } from 'next/navigation';
+import { useParams, usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { CiCalendar } from "react-icons/ci";
 import { MdHowToVote, MdOutlineTimeline } from "react-icons/md";
@@ -66,6 +66,7 @@ function getAvatarUrl(member: Pick<TripMember, 'avatar_url' | 'email'>) {
 export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null }) {
     const { state } = useSidebar();
     const pathname = usePathname();
+    const router = useRouter();
     const params = useParams();
     const routeTripId = Array.isArray(params.id) ? params.id[0] : (params.id as string | undefined);
     const tripId = tripDetails?.id || routeTripId;
@@ -77,6 +78,7 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
     const [inviteEmails, setInviteEmails] = useState('');
     const [inviteError, setInviteError] = useState('');
     const [inviteSending, setInviteSending] = useState(false);
+    const [leavingTrip, setLeavingTrip] = useState(false);
 
     const items = [
         { name: "Timeline", Icon: MdOutlineTimeline, link: tripId ? `/dashboard/${tripId}` : '/dashboard' },
@@ -160,6 +162,16 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                 ['owner', 'admin'].includes(member.role),
         ),
     );
+    const currentMemberRole =
+        members.find((member) => member.id === currentUserId)?.role ||
+        tripDetails.role;
+    const canLeaveTrip = Boolean(
+        tripId &&
+        token &&
+        currentUserId &&
+        currentMemberRole &&
+        !['owner', 'admin'].includes(currentMemberRole),
+    );
 
     const handleInviteSubmit = async () => {
         if (!tripDetails?.id || !token) return;
@@ -198,6 +210,36 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
             toast.error(message);
         } finally {
             setInviteSending(false);
+        }
+    };
+
+    const handleLeaveTrip = async () => {
+        if (!tripId || !token || leavingTrip) return;
+
+        if (!window.confirm('Quitter ce voyage ? Vous perdrez l acces a son planning.')) {
+            return;
+        }
+
+        setLeavingTrip(true);
+        try {
+            const res = await fetch(apiUrl(`/api/trips/${tripId}/members/me`), {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            const data = await res.json().catch(() => ({}));
+
+            if (!res.ok) {
+                throw new Error(data.error || 'Impossible de quitter le voyage.');
+            }
+
+            toast.success('Vous avez quitte le voyage.');
+            router.replace('/dashboard');
+            router.refresh();
+        } catch (err) {
+            const message = err instanceof Error ? err.message : 'Erreur lors de la sortie du voyage.';
+            toast.error(message);
+        } finally {
+            setLeavingTrip(false);
         }
     };
 
@@ -366,6 +408,20 @@ export default function TripSidebar({ tripDetails }: { tripDetails: Trip | null 
                             </ul>
                         </TooltipProvider>
                     </SidebarGroup>
+
+                    {!isCollapsed && canLeaveTrip && (
+                        <SidebarGroup className="px-3">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={handleLeaveTrip}
+                                disabled={leavingTrip}
+                                className="w-full border-red-200 bg-white text-red-600 hover:bg-red-50 hover:text-red-700"
+                            >
+                                {leavingTrip ? 'Sortie...' : 'Quitter le voyage'}
+                            </Button>
+                        </SidebarGroup>
+                    )}
                 </SidebarContent>
 
                 <SidebarFooter />

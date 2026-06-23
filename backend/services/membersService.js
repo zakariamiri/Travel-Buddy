@@ -248,9 +248,44 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
+
+async function leaveTrip(tripId, userId) {
+  const { data: membership, error: membershipError } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (membershipError) throw new Error(membershipError.message);
+  if (!membership) throw new Error("NOT_MEMBER");
+  if (membership.role === "owner") throw new Error("OWNER_CANNOT_LEAVE");
+
+  const { error: notificationsError } = await supabase
+    .from("trip_notifications")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("recipient_id", userId);
+
+  if (notificationsError) {
+    console.error("Error deleting member notifications:", notificationsError);
+  }
+
+  const { error: memberError } = await supabase
+    .from("trip_members")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("user_id", userId);
+
+  if (memberError) throw new Error(memberError.message);
+
+  return true;
+}
+
 module.exports = {
   generateInviteCode,
   getInviteCode,
   joinTripByCode,
   getTripMembers,
+  leaveTrip,
 };
