@@ -45,8 +45,26 @@ async function getMembers(req, res) {
   }
 }
 
+async function leaveTrip(req, res) {
+  try {
+    await membersService.leaveTrip(req.params.id, req.user.id);
+    res.json({ success: true });
+  } catch (err) {
+    if (err.message === "NOT_MEMBER") {
+      return res.status(404).json({ error: "Vous n'etes pas membre de ce voyage" });
+    }
+
+    if (err.message === "OWNER_CANNOT_LEAVE") {
+      return res.status(400).json({ error: "Le owner ne peut pas quitter son propre voyage" });
+    }
+
+    res.status(500).json({ error: err.message });
+  }
+}
+
 module.exports = {
   getInviteCode,
   joinTrip,
   getMembers,
+  leaveTrip,
 };

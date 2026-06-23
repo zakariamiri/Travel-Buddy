@@ -228,6 +228,18 @@ const SelectedIcon = (selectedActivityType?.icon || FaCompass) as IconType;
           />
         </Field>
 
+        <Field label="Date *">
+          <Input
+            type="date"
+            name="scheduled_date"
+            value={formData.scheduled_date}
+            min={tripDetails?.start_date?.split('T')[0]}
+            max={tripDetails?.end_date?.split('T')[0]}
+            onChange={handleInputChange}
+            required
+          />
+        </Field>
+
         <div className="grid grid-cols-2 gap-3">
           <Field label="Time">
             <Input

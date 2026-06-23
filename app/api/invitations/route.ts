@@ -25,7 +25,7 @@ type TripNotificationRow = {
   id: string;
   title: string;
   message: string;
-  type: "activity_created";
+  type: "activity_created" | "member_joined";
   created_at: string;
   trip_id: string;
   activity_id: string | null;
@@ -193,12 +193,17 @@ export async function GET(request: NextRequest) {
       const trip = Array.isArray(notification.trips)
         ? notification.trips[0]
         : notification.trips;
+      const type =
+        notification.type === "member_joined" ||
+        notification.title.toLowerCase().includes("nouveau membre")
+          ? "member_joined"
+          : notification.type;
 
       return {
         id: notification.id,
         title: notification.title,
         message: notification.message,
-        type: notification.type,
+        type,
         createdAt: notification.created_at,
         activityId: notification.activity_id,
         trip: trip

@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { Suspense, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,14 +12,20 @@ import { createClient } from '@/utils/supabase/client';
 import logo from '@/public/logoWhite.png';
 import greece from '@/public/greece2.jpg';
 
-export default function Signup() {
+function SignupContent() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
+
+  const getRedirectPath = () => {
+    const redirect = searchParams.get('redirect');
+    return redirect?.startsWith('/') ? redirect : '/dashboard';
+  };
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +48,7 @@ export default function Signup() {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getRedirectPath())}`,
         },
       });
 
@@ -51,10 +57,23 @@ export default function Signup() {
         console.error('Signup error:', error);
       } else if (data?.user) {
         console.log('Signup successful, redirecting...');
-        // Wait a moment for session to be set in cookies
+        if (!data.session) {
+          const { error: loginError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+
+          if (loginError) {
+            setError(
+              "Compte cree. Verifie ton email puis connecte-toi pour rejoindre le voyage.",
+            );
+            return;
+          }
+        }
+
         await new Promise(resolve => setTimeout(resolve, 500));
         router.refresh();
-        router.push('/dashboard');
+        router.replace(getRedirectPath());
       } else {
         setError('Signup failed. Please try again.');
       }
@@ -74,7 +93,7 @@ export default function Signup() {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(getRedirectPath())}`,
         },
       });
       if (error) {
@@ -100,6 +119,7 @@ export default function Signup() {
           src={greece}
           alt="Signup Illustration"
           fill
+          sizes="(min-width: 1024px) 50vw, 100vw"
           className="object-cover"
           priority
         />
@@ -208,12 +228,23 @@ export default function Signup() {
 
         <p className="text-sm text-center">
           Already have an account?
-          <a href="/login" className="text-primary font-semibold hover:underline">
+          <a
+            href={`/login?redirect=${encodeURIComponent(getRedirectPath())}`}
+            className="text-primary font-semibold hover:underline"
+          >
             Log in
           </a>
         </p>
 
       </div>
     </div>
+  );
+}
+
+export default function Signup() {
+  return (
+    <Suspense fallback={null}>
+      <SignupContent />
+    </Suspense>
   );
 }

@@ -92,6 +92,13 @@ async function joinTripByCode(inviteCode, userId) {
     return trip;
   }
 
+  const { data: currentMembers, error: currentMembersError } = await supabase
+    .from("trip_members")
+    .select("user_id, role")
+    .eq("trip_id", trip.id);
+
+  if (currentMembersError) throw new Error(currentMembersError.message);
+
   const fullName =
     authUser?.user_metadata?.full_name ||
     authUser?.user_metadata?.name ||
@@ -116,6 +123,48 @@ async function joinTripByCode(inviteCode, userId) {
   });
 
   if (memberError) throw new Error(memberError.message);
+
+  const recipientIds = [
+    ...new Set(
+      (currentMembers || [])
+        .filter((member) => member.user_id && member.user_id !== userId)
+        .sort((a, b) => {
+          if (a.role === "owner" && b.role !== "owner") return -1;
+          if (a.role !== "owner" && b.role === "owner") return 1;
+          return 0;
+        })
+        .map((member) => member.user_id),
+    ),
+  ];
+
+  const memberNotifications = recipientIds.map((recipientId) => ({
+      recipient_id: recipientId,
+      actor_id: userId,
+      trip_id: trip.id,
+      type: "member_joined",
+      title: "Nouveau membre",
+      message: `${fullName} a rejoint le voyage via le lien d'invitation.`,
+    }));
+
+  if (memberNotifications.length > 0) {
+    const { error: notificationError } = await supabase
+      .from("trip_notifications")
+      .insert(memberNotifications);
+
+    if (notificationError) {
+      const fallbackNotifications = memberNotifications.map((notification) => ({
+        ...notification,
+        type: "activity_created",
+      }));
+      const { error: fallbackError } = await supabase
+        .from("trip_notifications")
+        .insert(fallbackNotifications);
+
+      if (fallbackError) {
+        console.error("Error creating member joined notifications:", fallbackError);
+      }
+    }
+  }
 
   if (authUser?.email) {
     await supabase
@@ -199,9 +248,44 @@ async function getTripMembers(tripId) {
       return new Date(a.joined_at || 0) - new Date(b.joined_at || 0);
     });
 }
+
+async function leaveTrip(tripId, userId) {
+  const { data: membership, error: membershipError } = await supabase
+    .from("trip_members")
+    .select("role")
+    .eq("trip_id", tripId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (membershipError) throw new Error(membershipError.message);
+  if (!membership) throw new Error("NOT_MEMBER");
+  if (membership.role === "owner") throw new Error("OWNER_CANNOT_LEAVE");
+
+  const { error: notificationsError } = await supabase
+    .from("trip_notifications")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("recipient_id", userId);
+
+  if (notificationsError) {
+    console.error("Error deleting member notifications:", notificationsError);
+  }
+
+  const { error: memberError } = await supabase
+    .from("trip_members")
+    .delete()
+    .eq("trip_id", tripId)
+    .eq("user_id", userId);
+
+  if (memberError) throw new Error(memberError.message);
+
+  return true;
+}
+
 module.exports = {
   generateInviteCode,
   getInviteCode,
   joinTripByCode,
   getTripMembers,
+  leaveTrip,
 };

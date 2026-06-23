@@ -13,11 +13,11 @@ export default function Votespage() {
     const { t } = useLanguage();
     const params = useParams();
     const tripId = Array.isArray(params.id) ? params.id[0] : (params.id as string);
-    const router = useRouter()
 
     const {
         activities,
-        tripDetails
+        tripDetails,
+        handleActivitySuccess
     } = useTripContext();
 
     const filters = [
@@ -118,7 +118,7 @@ export default function Votespage() {
                                                 activity={activity}
                                                 tripId={tripId}
                                                 membersCount={tripDetails?.membersCount ?? 0}
-                                                onSuccess={() => router.refresh()} // Refresh parent data after voting
+                                                onSuccess={handleActivitySuccess}
                                             />
                                         ))}
                                     </div>

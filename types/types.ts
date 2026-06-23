@@ -1,3 +1,4 @@
+import React from 'react'
 import {
   FaHotel, FaUtensils, FaPlane, FaCompass, FaTrain, FaBus, FaTaxi, FaCamera,
   FaMusic, FaFilm, FaShoppingCart, FaDumbbell, FaHiking, FaSwimmer, FaSkiing,
@@ -31,7 +32,7 @@ export default interface Trip {
 export interface ActivityType {
   value: string
   label: string
-  icon: IconType
+  icon: React.ComponentType<{ className?: string }>
   category: string
 }
 

@@ -59,6 +59,10 @@ export async function middleware(request: NextRequest) {
     user &&
     (pathname.startsWith("/login") || pathname.startsWith("/signup"))
   ) {
+    const redirect = request.nextUrl.searchParams.get("redirect");
+    if (redirect?.startsWith("/")) {
+      return NextResponse.redirect(new URL(redirect, request.url));
+    }
     return NextResponse.redirect(new URL("/dashboard", request.url)); // or /dashboard
   }
 

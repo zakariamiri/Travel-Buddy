@@ -10,12 +10,18 @@ import { toast } from 'sonner'
 import { FaThumbsUp,FaThumbsDown  } from "react-icons/fa";
 import { FaCompass } from 'react-icons/fa'
 import { apiUrl } from '@/lib/api'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from './ui/dropdown-menu'
+import { FiMoreHorizontal } from 'react-icons/fi'
+import { CiTrash } from 'react-icons/ci'
+import { Pencil } from 'lucide-react'
+import UpdateActivityModal from './UpdateActivityModal'
 
 export default function ActivityVoteCard({ activity, tripId,membersCount,onSuccess }: { activity?: Activity | null; tripId: string; membersCount: number; onSuccess: () => void }) {
     
-    const { currentToken } = useTripContext()
+    const { currentToken, canManageTrip, handleDelete } = useTripContext()
     const [isVoting, setIsVoting] = useState(false)
     const [imageFailed, setImageFailed] = useState(false)
+    const [isUpdateOpen, setIsUpdateOpen] = useState(false)
     
     // Use local state for optimistic UI updates
     const [votes, setVotes] = useState(() => activity?.voteCount ?? 0)
@@ -78,6 +84,42 @@ export default function ActivityVoteCard({ activity, tripId,membersCount,onSucce
                  <div className={`absolute left-3 top-3 z-10 rounded-full px-2.5 py-1 text-[11px] font-bold capitalize ring-1 shadow-sm ${statusStyles[activity.status]}`}>
                     {activity.status}
                  </div>
+                {canManageTrip && (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger className='absolute right-3 top-3 z-20 flex size-8 items-center justify-center rounded-full bg-white/90 text-[#7f2a07] shadow-sm backdrop-blur hover:bg-white'>
+                            <FiMoreHorizontal />
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align='end'>
+                            <DropdownMenuItem
+                                onClick={(event) => {
+                                    event.stopPropagation()
+                                    handleDelete(activity.id)
+                                }}
+                                className='cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700'
+                            >
+                                <CiTrash className='mr-2' />
+                                Delete
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={(event) => {
+                                    event.stopPropagation()
+                                    setIsUpdateOpen(true)
+                                }}
+                                className='w-full cursor-pointer text-gray-700 focus:bg-gray-50 focus:text-gray-900'
+                            >
+                                <Pencil className='mr-2' size={16} />
+                                Update
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
+                <UpdateActivityModal
+                    tripId={tripId}
+                    activity={activity}
+                    open={isUpdateOpen}
+                    onOpenChange={setIsUpdateOpen}
+                    onSuccess={onSuccess}
+                />
                 {activity.image_url && !imageFailed ? (
                     <img
                         src={activity.image_url}
