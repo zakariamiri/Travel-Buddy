@@ -92,6 +92,13 @@ async function joinTripByCode(inviteCode, userId) {
     return trip;
   }
 
+  const { data: currentMembers, error: currentMembersError } = await supabase
+    .from("trip_members")
+    .select("user_id, role")
+    .eq("trip_id", trip.id);
+
+  if (currentMembersError) throw new Error(currentMembersError.message);
+
   const fullName =
     authUser?.user_metadata?.full_name ||
     authUser?.user_metadata?.name ||
@@ -116,6 +123,48 @@ async function joinTripByCode(inviteCode, userId) {
   });
 
   if (memberError) throw new Error(memberError.message);
+
+  const recipientIds = [
+    ...new Set(
+      (currentMembers || [])
+        .filter((member) => member.user_id && member.user_id !== userId)
+        .sort((a, b) => {
+          if (a.role === "owner" && b.role !== "owner") return -1;
+          if (a.role !== "owner" && b.role === "owner") return 1;
+          return 0;
+        })
+        .map((member) => member.user_id),
+    ),
+  ];
+
+  const memberNotifications = recipientIds.map((recipientId) => ({
+      recipient_id: recipientId,
+      actor_id: userId,
+      trip_id: trip.id,
+      type: "member_joined",
+      title: "Nouveau membre",
+      message: `${fullName} a rejoint le voyage via le lien d'invitation.`,
+    }));
+
+  if (memberNotifications.length > 0) {
+    const { error: notificationError } = await supabase
+      .from("trip_notifications")
+      .insert(memberNotifications);
+
+    if (notificationError) {
+      const fallbackNotifications = memberNotifications.map((notification) => ({
+        ...notification,
+        type: "activity_created",
+      }));
+      const { error: fallbackError } = await supabase
+        .from("trip_notifications")
+        .insert(fallbackNotifications);
+
+      if (fallbackError) {
+        console.error("Error creating member joined notifications:", fallbackError);
+      }
+    }
+  }
 
   if (authUser?.email) {
     await supabase

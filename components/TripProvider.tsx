@@ -1,7 +1,7 @@
 'use client'
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
-import Trip from '@/types/types';
+import Trip, { Activity } from '@/types/types';
 import { toast } from "sonner";
 import { useParams } from 'next/navigation';
 import { DragEndEvent } from '@dnd-kit/core';
@@ -9,7 +9,7 @@ import { apiUrl } from '@/lib/api';
 
 interface TripContextType {
     tripDetails: Trip | null;
-    activities: any[];
+    activities: Activity[];
     loadingActivities: boolean;
     currentToken: string | null;
     currentUserId: string | null;
@@ -27,7 +27,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
     const [tripDetails, setTripDetails] = useState<Trip | null>(null);
     const [currentToken, setCurrentToken] = useState<string | null>(null);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-    const [activities, setActivities] = useState<any[]>([]);
+    const [activities, setActivities] = useState<Activity[]>([]);
     const [loadingActivities, setLoadingActivities] = useState(false);
     const canManageTrip = Boolean(
         tripDetails?.role === 'owner' ||
@@ -94,7 +94,11 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
             toast.error('Seul le owner peut supprimer une activité');
             return;
         }
+        if (!window.confirm('Supprimer cette activite ? Cette action est definitive.')) {
+            return;
+        }
 
+        const previousActivities = activities;
         try {
             setActivities(prev => prev.filter(activity => activity.id !== activityId))
             const response = await fetch(apiUrl(`/api/trips/${id}/activities/${activityId}`), {
@@ -109,6 +113,7 @@ export function TripProvider({ children }: { children: React.ReactNode }) {
             toast.success('Activity deleted successfully')
         } catch (error) {
             console.error('Error deleting activity:', error)
+            setActivities(previousActivities)
             toast.error('Failed to delete activity')
         }
     }

@@ -147,6 +147,7 @@ export default function ActivitiesPage() {
                                                 key={activity.id}
                                                 activity={activity}
                                                 onDelete={() => handleDelete(activity.id)}
+                                                onUpdate={handleActivitySuccess}
                                                 canEdit={canManageTrip}
                                             />
                                         ))}

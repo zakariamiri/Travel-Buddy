@@ -15,9 +15,20 @@ import UpdateActivityModal from './UpdateActivityModal';
 import { useTripContext } from './TripProvider';
 import { IconType } from 'react-icons'
 
-export default function ActivityCard({ activity, onDelete, canEdit = false }: { activity: Activity; onDelete: () => void; canEdit?: boolean }) {
+export default function ActivityCard({
+  activity,
+  onDelete,
+  onUpdate,
+  canEdit = false,
+}: {
+  activity: Activity
+  onDelete: () => void
+  onUpdate?: () => void
+  canEdit?: boolean
+}) {
   const scheduledTime = (activity.scheduled_time || '').slice(0, 5)
   const { tripDetails } = useTripContext();
+  const [isUpdateOpen, setIsUpdateOpen] = React.useState(false)
 
 
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
@@ -70,34 +81,43 @@ export default function ActivityCard({ activity, onDelete, canEdit = false }: { 
           {/* Menu */}
           {canEdit && (
             <DropdownMenu>
-              <DropdownMenuTrigger className='h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0'>
+              <DropdownMenuTrigger
+                className='h-8 w-8 p-0 rounded-full hover:bg-gray-100 flex items-center justify-center flex-shrink-0'
+                onPointerDown={(event) => event.stopPropagation()}
+              >
                 <FiMoreHorizontal />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
                 <DropdownMenuItem
-                  onSelect={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDelete()
+                  }}
                   className='text-red-600 cursor-pointer hover:text-red-700 focus:text-red-700 focus:bg-red-50'
                 >
                   <CiTrash className='mr-2' />
                   Delete
                 </DropdownMenuItem>
-                <UpdateActivityModal
-                  tripId={tripDetails?.id || ''}
-                  activity={activity}
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setIsUpdateOpen(true)
+                  }}
+                  className='text-gray-700 cursor-pointer hover:text-[#7f2a07] focus:text-gray-900 focus:bg-gray-50 w'
                 >
-                  <DropdownMenuItem
-                    onSelect={(e) => e.preventDefault()}
-                    className='text-gray-700 cursor-pointer hover:text-[#7f2a07] focus:text-gray-900 focus:bg-gray-50 w'
-                  >
-                    
-                    <Pencil className='mr-2' size={16} />
-                    Update
-                  </DropdownMenuItem>
-
-                </UpdateActivityModal>
+                  <Pencil className='mr-2' size={16} />
+                  Update
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           )}
+          <UpdateActivityModal
+            tripId={tripDetails?.id || ''}
+            activity={activity}
+            open={isUpdateOpen}
+            onOpenChange={setIsUpdateOpen}
+            onSuccess={onUpdate}
+          />
         </div>
       </CardContent>
     </Card>

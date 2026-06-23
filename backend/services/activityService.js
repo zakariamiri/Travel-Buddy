@@ -152,18 +152,23 @@ async function updateActivity(tripId, activityId, userId, {
 }) {
     await assertTripOwner(tripId, userId);
 
+    const payload = {};
+    if (type !== undefined) payload.type = type;
+    if (title !== undefined) payload.title = title;
+    if (location !== undefined) payload.location = location ?? null;
+    if (notes !== undefined) payload.notes = notes ?? null;
+    if (image_url !== undefined) payload.image_url = image_url ?? null;
+    if (scheduled_date !== undefined) payload.scheduled_date = scheduled_date;
+    if (scheduled_time !== undefined) payload.scheduled_time = scheduled_time ?? null;
+    if (price_per_person !== undefined) payload.price_per_person = price_per_person ?? 0;
+
+    if (Object.keys(payload).length === 0) {
+        throw new Error("No fields to update");
+    }
+
     const { data: activity, error } = await supabase
         .from("trip_items")
-        .update({
-            type,
-            title,
-            location: location ?? null,
-            notes: notes ?? null,
-            image_url: image_url ?? null,
-            scheduled_date,
-            scheduled_time: scheduled_time ?? null,
-            price_per_person: price_per_person ?? 0,
-        })
+        .update(payload)
         .eq("id", activityId)
         .eq("trip_id", tripId)
         .select()
@@ -179,6 +184,24 @@ async function updateActivity(tripId, activityId, userId, {
 
 async function deleteActivity(tripId, activityId, userId) {
     await assertTripOwner(tripId, userId);
+
+    const { error: votesError } = await supabase
+        .from("activity_votes")
+        .delete()
+        .eq("activity_id", activityId);
+    if (votesError) {
+        console.error("Error deleting activity votes:", votesError);
+        throw votesError;
+    }
+
+    const { error: commentsError } = await supabase
+        .from("comments")
+        .delete()
+        .eq("item_id", activityId);
+    if (commentsError) {
+        console.error("Error deleting activity comments:", commentsError);
+        throw commentsError;
+    }
 
     const { data: activity, error } = await supabase.from("trip_items")
         .delete()

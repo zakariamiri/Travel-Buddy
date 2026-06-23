@@ -1,6 +1,6 @@
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Bell, MailCheck, Search, Vote } from "lucide-react";
+import { Bell, MailCheck, Search, UserPlus, Vote } from "lucide-react";
 import md5 from "md5";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -22,8 +22,9 @@ type TopbarActivityNotification = {
   id: string;
   title: string;
   message: string;
+  type: "activity_created" | "member_joined";
   activityId?: string | null;
-  notificationType: "activity_created";
+  notificationType: "activity_created" | "member_joined";
   trip: {
     id?: string;
     name: string;
@@ -55,6 +56,8 @@ function TopbarContent() {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const getUser = async () => {
       const { data } = await supabase.auth.getUser();
       const user = data.user;
@@ -62,6 +65,7 @@ function TopbarContent() {
       const fullName =
         user?.user_metadata?.full_name || user?.email?.split("@")[0];
 
+      if (!isMounted) return;
       setName(fullName || "User");
 
       const email = user?.email || "";
@@ -101,22 +105,32 @@ function TopbarContent() {
               }),
             )
           : [];
-        const activities = Array.isArray(payload.activityNotifications)
+        const tripNotifications = Array.isArray(payload.activityNotifications)
           ? payload.activityNotifications.map(
               (notification: Omit<TopbarActivityNotification, "notificationType">) => ({
                 ...notification,
-                notificationType: "activity_created" as const,
+                notificationType: notification.type,
               }),
             )
           : [];
 
-        setNotifications([...incoming, ...accepted, ...activities]);
+        if (isMounted) {
+          setNotifications([...incoming, ...accepted, ...tripNotifications]);
+        }
       } catch (err) {
         console.error("Erreur chargement notifications:", err);
       }
     };
 
     getUser();
+    const intervalId = window.setInterval(getUser, 15000);
+    window.addEventListener("focus", getUser);
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener("focus", getUser);
+    };
   }, []);
 
   return (
@@ -180,6 +194,8 @@ function TopbarContent() {
                     >
                       {notification.notificationType === "activity_created" ? (
                         <Vote className="mt-0.5 size-4 shrink-0 text-[#9f411d]" />
+                      ) : notification.notificationType === "member_joined" ? (
+                        <UserPlus className="mt-0.5 size-4 shrink-0 text-[#9f411d]" />
                       ) : (
                         <MailCheck className="mt-0.5 size-4 shrink-0 text-[#9f411d]" />
                       )}
@@ -189,7 +205,9 @@ function TopbarContent() {
                             ? "You have a trip invitation"
                             : notification.notificationType === "accepted"
                               ? "Invitation accepted"
-                              : "Nouvelle activite a voter"}
+                              : notification.notificationType === "member_joined"
+                                ? "Nouveau membre"
+                                : "Nouvelle activite a voter"}
                         </span>
                         <span className="mt-0.5 block text-xs text-muted-foreground">
                           {notification.notificationType === "accepted"
@@ -204,6 +222,8 @@ function TopbarContent() {
                             ? "Check your email or click to join."
                             : notification.notificationType === "activity_created"
                               ? notification.message
+                              : notification.notificationType === "member_joined"
+                                ? notification.message
                               : notification.trip?.name || "Open trip dashboard."}
                         </span>
                       </span>

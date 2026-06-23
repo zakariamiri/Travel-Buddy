@@ -8,6 +8,9 @@ import { apiUrl } from "@/lib/api";
 
 type JoinResponse = {
   error?: string;
+  trip?: {
+    id?: string;
+  };
 };
 
 function parseApiResponse(text: string): JoinResponse {
@@ -38,7 +41,7 @@ function JoinTripContent() {
       const token = data.session?.access_token;
 
       if (!token) {
-        router.replace(`/login?redirect=${encodeURIComponent(`/join?code=${code}`)}`);
+        router.replace(`/signup?redirect=${encodeURIComponent(`/join?code=${code}`)}`);
         return;
       }
 
@@ -55,6 +58,17 @@ function JoinTripContent() {
 
         if (!res.ok) {
           throw new Error(payload.error || "Impossible de rejoindre le voyage.");
+        }
+
+        if (payload.trip?.id) {
+          await fetch("/api/member-joined-notification", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ tripId: payload.trip.id }),
+          });
         }
 
         setMessage("Voyage rejoint. Redirection...");
