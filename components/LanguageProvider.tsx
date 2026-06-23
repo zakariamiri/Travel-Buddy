@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useMemo, useState } from "react";
+import React, { createContext, useContext, useEffect, useMemo, useSyncExternalStore } from "react";
 
 type Language = "en" | "fr";
 type Dictionary = Record<string, { en: string; fr: string }>;
@@ -214,19 +214,38 @@ type LanguageContextValue = {
 };
 
 const LanguageContext = createContext<LanguageContextValue | null>(null);
+const LANGUAGE_STORAGE_KEY = "travel-buddy-language";
+const LANGUAGE_CHANGE_EVENT = "travel-buddy-language-change";
+
+function readStoredLanguage(): Language {
+  if (typeof window === "undefined") return "en";
+
+  const savedLanguage = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+  return savedLanguage === "fr" || savedLanguage === "en" ? savedLanguage : "en";
+}
+
+function subscribeToLanguage(callback: () => void) {
+  window.addEventListener("storage", callback);
+  window.addEventListener(LANGUAGE_CHANGE_EVENT, callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(LANGUAGE_CHANGE_EVENT, callback);
+  };
+}
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguageState] = useState<Language>(() => {
-    if (typeof window === "undefined") return "en";
-    const savedLanguage = window.localStorage.getItem("travel-buddy-language");
-    return savedLanguage === "fr" || savedLanguage === "en" ? savedLanguage : "en";
-  });
+  const language = useSyncExternalStore(subscribeToLanguage, readStoredLanguage, () => "en");
 
   const setLanguage = (nextLanguage: Language) => {
-    setLanguageState(nextLanguage);
-    window.localStorage.setItem("travel-buddy-language", nextLanguage);
+    window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);
     document.documentElement.lang = nextLanguage;
+    window.dispatchEvent(new Event(LANGUAGE_CHANGE_EVENT));
   };
+
+  useEffect(() => {
+    document.documentElement.lang = language;
+  }, [language]);
 
   const value = useMemo<LanguageContextValue>(
     () => ({
