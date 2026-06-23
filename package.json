@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "backend": "node backend/server.js",
+    "ai": "powershell -ExecutionPolicy Bypass -File travel-buddy-ai/start-ai-visible.ps1",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

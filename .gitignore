@@ -2,6 +2,12 @@
 
 # dependencies
 /node_modules
+/.venv
+/.venv/
+/travel-buddy-ai/.venv/
+/travel-buddy-ai/travel-buddy-model/
+__pycache__/
+*.pyc
 /.pnp
 .pnp.*
 .yarn/*

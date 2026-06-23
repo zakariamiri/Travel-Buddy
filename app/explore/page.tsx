@@ -183,16 +183,16 @@ export default function ExplorePage() {
       <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main className="flex-1 bg-background p-5 md:p-8">
-          <section className="mb-6 rounded-lg border border-[#ead9bf] bg-white p-5 shadow-sm md:p-6">
-            <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+        <main className="flex-1 bg-[radial-gradient(circle_at_top_left,#fff4df_0%,#fdf9f6_38%,#f7efe8_100%)] p-5 md:p-8">
+          <section className="mb-6 overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_18px_45px_rgba(127,42,7,0.10)]">
+            <div className="flex flex-col justify-between gap-5 bg-[linear-gradient(135deg,#fffaf4_0%,#ffffff_52%,#f3e4da_100%)] p-5 lg:flex-row lg:items-center md:p-6">
               <div>
-                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
-                  <Compass className="size-3.5" />
+                <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-bold text-[#8a3412] shadow-sm">
+                  <Compass className="size-3.5 text-[#d4a843]" />
                   Explore
                 </div>
                 <h1 className="text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-                  Trip map
+                  Explore your trip map
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
                   Visualize the current trip, its destination, and the key
@@ -203,8 +203,9 @@ export default function ExplorePage() {
               {selectedTrip && (
                 <Link
                   href={`/dashboard/${selectedTrip.id}`}
-                  className="w-fit rounded-lg bg-primary px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-[#9f411d]"
+                  className="group flex w-fit items-center gap-2 rounded-lg bg-[#9f411d] px-5 py-3 text-sm font-bold text-white shadow-[0_10px_24px_rgba(159,65,29,0.22)] transition hover:-translate-y-0.5 hover:bg-[#7f3417]"
                 >
+                  <Route className="size-4" />
                   Ouvrir le trip
                 </Link>
               )}
@@ -212,12 +213,14 @@ export default function ExplorePage() {
           </section>
 
           {loading ? (
-            <div className="flex h-80 items-center justify-center rounded-lg border border-dashed bg-white">
-              <p className="text-gray-400 animate-pulse">Loading map...</p>
+            <div className="flex h-80 items-center justify-center rounded-lg border border-dashed border-[#ead9bf] bg-white shadow-sm">
+              <p className="animate-pulse text-sm font-semibold text-muted-foreground">Loading map...</p>
             </div>
           ) : !selectedTrip ? (
-            <div className="flex h-80 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-white">
-              <MapPin className="size-10 text-primary" />
+            <div className="flex h-80 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#ead9bf] bg-white shadow-sm">
+              <div className="flex size-14 items-center justify-center rounded-full bg-[#f3e4da] text-[#9f411d]">
+                <MapPin className="size-7" />
+              </div>
               <p className="text-lg font-semibold text-foreground">
                 Aucun trip a explorer
               </p>
@@ -228,8 +231,8 @@ export default function ExplorePage() {
           ) : (
             <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
               <div className="flex min-w-0 flex-col gap-6">
-                <section className="overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-sm">
-                  <div className="relative h-[520px] w-full">
+                <section className="overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_18px_45px_rgba(127,42,7,0.10)]">
+                  <div className="relative h-[540px] w-full">
                     <iframe
                       title={`Map ${selectedTrip.destination}`}
                       src={mapUrl}
@@ -237,7 +240,7 @@ export default function ExplorePage() {
                       loading="lazy"
                       referrerPolicy="no-referrer-when-downgrade"
                     />
-                    <div className="pointer-events-none absolute left-4 top-4 rounded-lg bg-white/95 px-4 py-3 shadow-sm">
+                    <div className="pointer-events-none absolute left-4 top-4 rounded-lg border border-[#ead9bf] bg-white/95 px-4 py-3 shadow-[0_10px_24px_rgba(127,42,7,0.12)] backdrop-blur">
                       <p className="text-xs font-bold uppercase tracking-wide text-gray-500">
                         Destination
                       </p>
@@ -246,14 +249,25 @@ export default function ExplorePage() {
                         {selectedTrip.destination}
                       </p>
                     </div>
+                    <div className="pointer-events-none absolute bottom-4 left-4 right-4 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-white/50 bg-white/90 px-3 py-1.5 text-xs font-bold text-[#7f2a07] shadow-sm backdrop-blur">
+                        {selectedTrip.name}
+                      </span>
+                      <span className="rounded-full border border-white/50 bg-white/90 px-3 py-1.5 text-xs font-bold text-[#7f2a07] shadow-sm backdrop-blur">
+                        {tripDays || '-'} days
+                      </span>
+                      <span className="rounded-full border border-white/50 bg-white/90 px-3 py-1.5 text-xs font-bold text-[#7f2a07] shadow-sm backdrop-blur">
+                        {selectedTrip.members?.length || 0} members
+                      </span>
+                    </div>
                   </div>
                 </section>
 
-                <section className="rounded-lg border border-[#ead9bf] bg-white p-5 shadow-sm">
+                <section className="rounded-lg border border-[#ead9bf] bg-white p-5 shadow-[0_14px_35px_rgba(127,42,7,0.08)]">
                   <div className="mb-4 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                     <div>
-                      <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
-                        <Sparkles className="size-3.5" />
+                      <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-bold text-[#8a3412]">
+                        <Sparkles className="size-3.5 text-[#d4a843]" />
                         Activites associees
                       </div>
                       <h2 className="text-2xl font-bold text-foreground">
@@ -263,19 +277,19 @@ export default function ExplorePage() {
                         Les activites planifiees pour {selectedTrip.name}.
                       </p>
                     </div>
-                    <span className="w-fit rounded-full bg-[#f3e4da] px-3 py-1 text-sm font-bold text-primary">
+                    <span className="w-fit rounded-full border border-[#ead9bf] bg-[#f3e4da] px-3 py-1 text-sm font-bold text-primary shadow-sm">
                       {activities.length} activites
                     </span>
                   </div>
 
                   {loadingActivities ? (
-                    <div className="flex h-32 items-center justify-center rounded-lg border border-dashed">
+                    <div className="flex h-32 items-center justify-center rounded-lg border border-dashed border-[#ead9bf] bg-[#fffaf4]">
                       <p className="text-sm text-gray-400 animate-pulse">
                         Loading activities...
                       </p>
                     </div>
                   ) : activities.length === 0 ? (
-                    <div className="flex h-36 flex-col items-center justify-center gap-2 rounded-lg border border-dashed bg-[#fff8ec]">
+                    <div className="flex h-36 flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-[#ead9bf] bg-[#fff8ec]">
                       <Route className="size-8 text-primary" />
                       <p className="text-sm font-semibold text-foreground">
                         Aucune activite pour ce trip
@@ -286,7 +300,7 @@ export default function ExplorePage() {
                       {activities.map((activity) => (
                         <article
                           key={activity.id}
-                          className="rounded-lg border border-[#ead9bf] bg-[#fffdf9] p-4 transition hover:border-primary/60 hover:shadow-sm"
+                          className="group rounded-lg border border-[#ead9bf] bg-[#fffdf9] p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c97950] hover:bg-white hover:shadow-[0_14px_28px_rgba(127,42,7,0.12)]"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
@@ -300,13 +314,13 @@ export default function ExplorePage() {
                                 </span>
                               </p>
                             </div>
-                            <span className="shrink-0 rounded-full bg-sidebar px-2.5 py-1 text-xs font-bold text-primary">
+                            <span className="shrink-0 rounded-full bg-[#f3e4da] px-2.5 py-1 text-xs font-bold capitalize text-primary">
                               {activity.status || "pending"}
                             </span>
                           </div>
 
                           <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-                            <div className="rounded-md bg-white p-2">
+                            <div className="rounded-md border border-[#f0dfd2] bg-white p-2">
                               <p className="text-xs font-semibold text-gray-500">
                                 Date
                               </p>
@@ -314,7 +328,7 @@ export default function ExplorePage() {
                                 {formatDate(activity.scheduled_date)}
                               </p>
                             </div>
-                            <div className="rounded-md bg-white p-2">
+                            <div className="rounded-md border border-[#f0dfd2] bg-white p-2">
                               <p className="text-xs font-semibold text-gray-500">
                                 Time
                               </p>
@@ -347,8 +361,8 @@ export default function ExplorePage() {
               </div>
 
               <aside className="flex flex-col gap-4">
-                <section className="overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-sm">
-                  <div className="relative h-44">
+                <section className="overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_18px_45px_rgba(127,42,7,0.10)]">
+                  <div className="relative h-52">
                     <img
                       src={selectedTrip.cover_url || fallbackCover}
                       alt={selectedTrip.name}
@@ -356,7 +370,7 @@ export default function ExplorePage() {
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
                     <div className="absolute bottom-4 left-4 right-4 text-white">
-                      <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold text-primary">
+                      <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-bold uppercase tracking-wide text-primary">
                         {selectedTrip.status}
                       </span>
                       <h2 className="mt-3 line-clamp-2 text-2xl font-bold">
@@ -367,7 +381,7 @@ export default function ExplorePage() {
 
                   <div className="space-y-4 p-4">
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="rounded-lg bg-[#fff8ec] p-3">
+                      <div className="rounded-lg border border-[#ead9bf] bg-[#fff8ec] p-3 shadow-sm">
                         <CalendarDays className="mb-2 size-4 text-primary" />
                         <p className="text-xs font-semibold text-gray-500">
                           Start
@@ -376,7 +390,7 @@ export default function ExplorePage() {
                           {formatDate(selectedTrip.start_date)}
                         </p>
                       </div>
-                      <div className="rounded-lg bg-[#fff8ec] p-3">
+                      <div className="rounded-lg border border-[#ead9bf] bg-[#fff8ec] p-3 shadow-sm">
                         <Clock3 className="mb-2 size-4 text-primary" />
                         <p className="text-xs font-semibold text-gray-500">
                           End
@@ -387,7 +401,7 @@ export default function ExplorePage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg border border-[#ead9bf] p-3">
+                    <div className="rounded-lg border border-[#ead9bf] bg-white p-3 shadow-sm">
                       <div className="mb-2 flex items-center justify-between">
                         <span className="text-sm font-semibold text-gray-600">
                           Progression
@@ -425,7 +439,7 @@ export default function ExplorePage() {
                       </div>
                     </div>
 
-                    <div className="rounded-lg bg-sidebar p-3">
+                    <div className="rounded-lg border border-[#ead9bf] bg-[#fffaf4] p-3 shadow-sm">
                       <p className="text-xs font-bold uppercase tracking-wide text-gray-600">
                         Owner
                       </p>
@@ -437,7 +451,7 @@ export default function ExplorePage() {
                 </section>
 
                 {trips.length > 1 && (
-                  <section className="rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm">
+                  <section className="rounded-lg border border-[#ead9bf] bg-white p-4 shadow-[0_14px_35px_rgba(127,42,7,0.08)]">
                     <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-gray-600">
                       Other trips
                     </h3>
@@ -447,10 +461,10 @@ export default function ExplorePage() {
                           key={trip.id}
                           type="button"
                           onClick={() => setSelectedTripId(trip.id)}
-                          className={`flex w-full items-center gap-3 rounded-lg p-2 text-left transition ${
+                          className={`flex w-full items-center gap-3 rounded-lg p-3 text-left text-sm font-semibold transition ${
                             trip.id === selectedTrip.id
-                              ? "bg-primary text-white"
-                              : "hover:bg-sidebar"
+                              ? "bg-primary text-white shadow-sm"
+                              : "border border-transparent hover:border-[#ead9bf] hover:bg-sidebar"
                           }`}
                         >
                           <CheckCircle2 className="size-4 shrink-0" />

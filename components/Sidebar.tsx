@@ -4,10 +4,12 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
 import { apiUrl } from "@/lib/api";
 import { useEffect, useState } from "react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 export default function Sidebar() {
   const supabase = createClient();
   const router = useRouter();
+  const { t } = useLanguage();
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -80,12 +82,12 @@ export default function Sidebar() {
                     hover:bg-[#9f411d] hover:text-white"
       >
         <i className="ri-home-5-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-        Dashboard
+        {t("dashboard")}
       </Button>
 
       {/* Trips */}
       <Button
-        onClick={() => router.push("/dashboard")}
+        onClick={() => router.push("/trips")}
         variant="ghost"
         className="group justify-start gap-4 text-base rounded-md px-3 py-6 
                     bg-transparent text-gray-800
@@ -93,7 +95,7 @@ export default function Sidebar() {
                     hover:bg-[#9f411d] hover:text-white"
       >
         <i className="ri-flight-takeoff-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-        Trips
+        {t("trips")}
       </Button>
 
       {/* Explore */}
@@ -106,7 +108,7 @@ export default function Sidebar() {
                     hover:bg-[#9f411d] hover:text-white"
       >
         <i className="ri-map-2-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-        Explore
+        {t("explore")}
       </Button>
 
       {/* Expenses */}
@@ -119,7 +121,7 @@ export default function Sidebar() {
                     hover:bg-[#9f411d] hover:text-white"
       >
         <i className="ri-wallet-3-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-        Expenses
+        {t("expenses")}
       </Button>
 
       {/* Settings */}
@@ -131,7 +133,7 @@ export default function Sidebar() {
                     hover:bg-[#9f411d] hover:text-white"
       >
         <i className="ri-settings-3-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-        Settings
+        {t("settings")}
       </Button>
 
       <div className="mt-auto pt-4">
@@ -144,7 +146,7 @@ export default function Sidebar() {
                      hover:bg-[#9f411d] hover:text-white"
         >
           <i className="ri-logout-box-r-line text-xl text-gray-800 transition-colors group-hover:text-white"></i>
-          Logout
+          {t("logout")}
         </Button>
       </div>
     </aside>

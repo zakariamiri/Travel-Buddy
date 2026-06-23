@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { apiUrl } from "@/lib/api";
 import { createClient } from "@/utils/supabase/client";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface Stats {
   activeTrip: {
@@ -36,6 +37,7 @@ function ActionLink({ href, children }: { href: string; children: React.ReactNod
 }
 
 export default function StatsCards() {
+  const { t } = useLanguage();
   const [stats, setStats] = useState<Stats | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -84,7 +86,7 @@ export default function StatsCards() {
     <div className="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
       <div className={cardClass}>
         <span className="w-fit rounded-full bg-secondary/10 px-2.5 py-1 text-xs font-bold text-secondary">
-          ACTIVE TRIP
+          {t("activeTrip").toUpperCase()}
         </span>
         {stats?.activeTrip?.start_date ? (
           <>
@@ -92,19 +94,19 @@ export default function StatsCards() {
               {stats.activeTrip.name}
             </h3>
             <p className="mt-1 text-sm text-muted-foreground">
-              {stats.activeTrip.daysUntilStart} days |{" "}
-              {stats.activeTrip.collaborators} collaborators
+              {stats.activeTrip.daysUntilStart} {t("days")} |{" "}
+              {stats.activeTrip.collaborators} {t("collaborators")}
             </p>
             <ActionLink href={`/dashboard/${stats.activeTrip.id}`}>
-              Open Itinerary
+              {t("openItinerary")}
             </ActionLink>
           </>
         ) : (
           <>
             <h3 className="mt-4 text-lg font-semibold text-gray-400">
-              No upcoming trip
+              {t("noUpcomingTrip")}
             </h3>
-            <p className="text-sm text-gray-400">Create a new trip to get started</p>
+            <p className="text-sm text-gray-400">{t("createNewTripStart")}</p>
           </>
         )}
       </div>
@@ -120,8 +122,8 @@ export default function StatsCards() {
               })} DH`
             : "-"}
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">Trip Expenses</p>
-        <ActionLink href={budgetHref}>Open Budget</ActionLink>
+        <p className="mt-1 text-sm text-muted-foreground">{t("tripExpenses")}</p>
+        <ActionLink href={budgetHref}>{t("openBudget")}</ActionLink>
       </div>
 
       <div className={cardClass}>
@@ -130,10 +132,10 @@ export default function StatsCards() {
         </div>
         <h3 className="mt-4 text-xl font-bold text-foreground">
           {stats?.daysUntilNextTrip != null
-            ? `${stats.daysUntilNextTrip} days`
+            ? `${stats.daysUntilNextTrip} ${t("days")}`
             : "-"}
         </h3>
-        <p className="mt-1 text-sm text-muted-foreground">until your next trip</p>
+        <p className="mt-1 text-sm text-muted-foreground">{t("untilNextTrip")}</p>
       </div>
     </div>
   );

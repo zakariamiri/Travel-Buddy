@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/select'
 import { apiUrl } from '@/lib/api'
 import { ACTIVITY_TYPES } from '@/types/types'
+import { useLanguage } from '@/components/LanguageProvider'
 
 type Expense = {
   id: string
@@ -71,6 +72,7 @@ function toNumber(value: unknown, fallback = 0) {
 }
 
 export default function BudgetPage() {
+  const { t } = useLanguage()
   const { activities, currentToken, tripDetails } = useTripContext()
   const membersCount = Math.max(1, tripDetails?.membersCount ?? 4)
   const [expenses, setExpenses] = useState<Expense[]>([])
@@ -465,19 +467,19 @@ export default function BudgetPage() {
 
   const statCards = [
     {
-      label: 'Budget total du trip',
+      label: t("totalTripBudget"),
       value: formatMoney(budgetTotal),
       icon: WalletCards,
       className: 'bg-primary/10 text-primary',
     },
     {
-      label: 'Montant depense',
+      label: t("spentAmount"),
       value: formatMoney(spentTotal),
       icon: CreditCard,
       className: 'bg-accent/20 text-[#9f411d]',
     },
     {
-      label: 'Budget restant',
+      label: t("remainingBudget"),
       value: formatMoney(remainingBudget),
       icon: Coins,
       className: 'bg-secondary/10 text-secondary',
@@ -491,17 +493,17 @@ export default function BudgetPage() {
           <div>
             <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
               <WalletCards className="size-3.5" />
-              Travel Budget
+              {t("travelBudget")}
             </div>
             <h1 className="text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-              Budget & Expenses
+              {t("budgetExpenses")}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-              Suivez le budget du voyage, les estimations par activite et les depenses reellement payees.
+              {t("budgetExpensesText")}
             </p>
           </div>
           <div className="rounded-lg border bg-white px-4 py-3 text-sm shadow-sm">
-            <span className="text-muted-foreground">Trip</span>
+            <span className="text-muted-foreground">{t("trip")}</span>
             <p className="font-semibold text-foreground">{tripDetails?.name || 'Travel Buddy Trip'}</p>
           </div>
         </header>
@@ -527,8 +529,8 @@ export default function BudgetPage() {
         <section className="rounded-lg border bg-white p-5 shadow-sm">
           <div className="mb-3 flex items-center justify-between gap-3">
             <div>
-              <h2 className="font-semibold text-foreground">Budget utilise</h2>
-              <p className="text-sm text-muted-foreground">{formatMoney(spentTotal)} depenses sur {formatMoney(budgetTotal)}</p>
+              <h2 className="font-semibold text-foreground">{t("usedBudget")}</h2>
+              <p className="text-sm text-muted-foreground">{formatMoney(spentTotal)} {t("spentOn")} {formatMoney(budgetTotal)}</p>
             </div>
             <span className="rounded-full bg-sidebar px-3 py-1 text-sm font-bold text-primary">{progressValue}%</span>
           </div>
@@ -540,7 +542,7 @@ export default function BudgetPage() {
           </div>
           <div className="mt-4 flex flex-col gap-2 border-t pt-4 sm:flex-row sm:items-end">
             <div className="flex-1">
-              <Label htmlFor="trip-budget">Budget total (DH)</Label>
+              <Label htmlFor="trip-budget">{t("totalBudgetDh")}</Label>
               <Input
                 id="trip-budget"
                 type="number"
@@ -559,7 +561,7 @@ export default function BudgetPage() {
               className="bg-primary text-white hover:bg-primary/90"
             >
               <Pencil className="size-4" />
-              {savingBudget ? 'Saving...' : 'Update budget'}
+              {savingBudget ? t("saving") : t("updateBudget")}
             </Button>
           </div>
           {!canEditBudget && (
@@ -573,8 +575,8 @@ export default function BudgetPage() {
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="mb-5 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
               <div>
-                <h2 className="text-xl font-bold text-foreground">Estimated Activities Cost</h2>
-                <p className="text-sm text-muted-foreground">Total = prix par personne x participants ou votes.</p>
+                <h2 className="text-xl font-bold text-foreground">{t("estimatedActivitiesCost")}</h2>
+                <p className="text-sm text-muted-foreground">{t("estimatedFormula")}</p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-sm font-semibold text-primary">
                 <CircleDollarSign className="size-4" />
@@ -584,15 +586,15 @@ export default function BudgetPage() {
 
             <div className="overflow-hidden rounded-lg border">
               <div className="hidden grid-cols-[1.4fr_0.8fr_0.9fr_0.8fr] bg-sidebar/70 px-4 py-3 text-xs font-bold uppercase text-muted-foreground md:grid">
-                <span>Nom activite</span>
-                <span>Prix/personne</span>
-                <span>Participants</span>
-                <span className="text-right">Total</span>
+                <span>{t("activityName")}</span>
+                <span>{t("pricePerPerson")}</span>
+                <span>{t("participants")}</span>
+                <span className="text-right">{t("total")}</span>
               </div>
               <div className="divide-y">
                 {activityRows.length === 0 ? (
                   <div className="p-6 text-center text-sm text-muted-foreground">
-                    Aucune activite disponible pour estimer le budget.
+                    {t("noActivitiesBudget")}
                   </div>
                 ) : activityRows.map((activity) => {
                   const ActivityIcon =
@@ -618,7 +620,7 @@ export default function BudgetPage() {
                       </span>
                       <span className="inline-flex items-center gap-2 text-sm font-medium text-foreground">
                         <Users className="size-4 text-secondary" />
-                        {activity.participantCount} participants
+                        {activity.participantCount} {t("participants")}
                       </span>
                       <span className="text-left text-lg font-bold text-foreground md:text-right">
                         {formatMoney(activity.total)}
@@ -631,8 +633,8 @@ export default function BudgetPage() {
           </div>
 
           <div className="rounded-lg border bg-white p-5 shadow-sm">
-            <h2 className="text-xl font-bold text-foreground">Member Balances</h2>
-            <p className="mb-5 text-sm text-muted-foreground">Qui doit payer et qui doit recevoir.</p>
+            <h2 className="text-xl font-bold text-foreground">{t("memberBalances")}</h2>
+            <p className="mb-5 text-sm text-muted-foreground">{t("balancesText")}</p>
             {!settlementsAvailable && (
               <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
                 Creez la table expense_settlements dans Supabase pour activer les reglements.
@@ -641,7 +643,7 @@ export default function BudgetPage() {
             <div className="space-y-3">
               {balances.length === 0 ? (
                 <div className="rounded-lg border border-dashed bg-sidebar/30 p-5 text-center text-sm text-muted-foreground">
-                  Aucun solde a regler pour le moment.
+                  {t("noBalances")}
                 </div>
               ) : balances.map((balance) => (
                 <div key={`${balance.fromId}-${balance.toId}`} className="rounded-lg border bg-white p-4">
@@ -649,9 +651,9 @@ export default function BudgetPage() {
                     <ArrowUpRight className="mt-1 size-5 text-primary" />
                     <div className="flex-1">
                       <p className="font-semibold text-foreground">
-                        {balance.from} doit payer {formatMoney(balance.amount)} a {balance.to}
+                        {balance.from} {t("owes")} {formatMoney(balance.amount)} {t("to")} {balance.to}
                       </p>
-                      <p className="text-xs text-muted-foreground">Split automatique des depenses reelles.</p>
+                      <p className="text-xs text-muted-foreground">{t("autoSplit")}</p>
                     </div>
                   </div>
                   <Button
@@ -661,7 +663,7 @@ export default function BudgetPage() {
                     className="mt-3 w-full bg-primary text-white hover:bg-primary/90"
                   >
                     <CheckCircle2 className="size-4" />
-                    Mark as paid
+                    {t("markAsPaid")}
                   </Button>
                 </div>
               ))}
@@ -677,17 +679,17 @@ export default function BudgetPage() {
               </div>
               <div>
                 <h2 className="text-xl font-bold text-foreground">
-                  {editingExpenseId ? 'Update Expense' : 'Real Expenses'}
+                  {editingExpenseId ? t("updateExpense") : t("realExpenses")}
                 </h2>
                 <p className="text-sm text-muted-foreground">
-                  {editingExpenseId ? 'Modifier la depense selectionnee.' : 'Ajouter une depense reelle.'}
+                  {editingExpenseId ? t("editSelectedExpense") : t("addRealExpense")}
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4">
               <div>
-                <Label htmlFor="expense-title">Titre</Label>
+                <Label htmlFor="expense-title">{t("title")}</Label>
                 <Input
                   id="expense-title"
                   value={formData.title}
@@ -698,7 +700,7 @@ export default function BudgetPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label htmlFor="expense-amount">Montant</Label>
+                  <Label htmlFor="expense-amount">{t("amount")}</Label>
                   <Input
                     id="expense-amount"
                     type="number"
@@ -722,7 +724,7 @@ export default function BudgetPage() {
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <Label>Paye par</Label>
+                  <Label>{t("paidBy")}</Label>
                   <Select value={selectedPaidBy} onValueChange={(value) => setFormData((current) => ({ ...current, paidBy: value || current.paidBy }))}>
                     <SelectTrigger className="mt-2 w-full bg-white">
                       <SelectValue>
@@ -733,20 +735,20 @@ export default function BudgetPage() {
                       <SelectItem value={SHARED_PAYMENT_VALUE}>
                         <span className="flex items-center gap-2">
                           <Users className="size-4 text-secondary" />
-                          <span>Tous ont paye leur part</span>
+                          <span>{t("allPaidTheirShare")}</span>
                         </span>
                       </SelectItem>
                       <div className="my-1 border-t" />
                       {members.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">
-                          Aucun membre disponible
+                          {t("noMemberAvailable")}
                         </div>
                       ) : members.map((member) => (
                         <SelectItem key={member.id} value={member.id}>
                           <span className="flex w-full items-center justify-between gap-3">
                             <span>{member.name}</span>
                             <span className="rounded-full bg-sidebar px-2 py-0.5 text-[10px] font-bold uppercase text-primary">
-                              {member.role === 'owner' ? 'Admin' : 'Member'}
+                              {member.role === 'owner' ? 'Admin' : t("member")}
                             </span>
                           </span>
                         </SelectItem>
@@ -755,7 +757,7 @@ export default function BudgetPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label>Categorie</Label>
+                  <Label>{t("category")}</Label>
                   <Select
                     value={formData.category}
                     onValueChange={(value) => value && handleCategoryChange(value)}
@@ -765,11 +767,11 @@ export default function BudgetPage() {
                     </SelectTrigger>
                     <SelectContent>
                       <div className="px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">
-                        Activities created
+                        {t("activitiesCreated")}
                       </div>
                       {activityRows.length === 0 ? (
                         <div className="px-3 py-2 text-sm text-muted-foreground">
-                          Aucune activite creee
+                          {t("noActivityCreated")}
                         </div>
                       ) : activityRows.map((activity) => (
                         <SelectItem key={activity.id} value={`Activity: ${activity.title}`}>
@@ -777,7 +779,7 @@ export default function BudgetPage() {
                         </SelectItem>
                       ))}
                       <div className="mt-1 border-t px-2 py-1.5 text-xs font-semibold uppercase text-muted-foreground">
-                        Choices
+                        {t("choices")}
                       </div>
                       {customCategories.map((category) => (
                         <SelectItem key={category} value={category}>{category}</SelectItem>
@@ -794,10 +796,10 @@ export default function BudgetPage() {
                 >
                   <ReceiptText className="size-4" />
                   {savingExpense
-                    ? 'Saving...'
+                    ? t("saving")
                     : editingExpenseId
-                      ? 'Update expense'
-                      : 'Add expense'}
+                      ? t("updateExpenseButton")
+                      : t("addExpense")}
                 </Button>
                 {editingExpenseId && (
                   <Button
@@ -805,7 +807,7 @@ export default function BudgetPage() {
                     variant="outline"
                     onClick={cancelExpenseEdit}
                   >
-                    Cancel
+                    {t("cancel")}
                   </Button>
                 )}
               </div>
@@ -815,18 +817,18 @@ export default function BudgetPage() {
           <div className="rounded-lg border bg-white p-5 shadow-sm">
             <div className="mb-5 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-bold text-foreground">Expenses List</h2>
-                <p className="text-sm text-muted-foreground">Historique des paiements reels.</p>
+                <h2 className="text-xl font-bold text-foreground">{t("expensesList")}</h2>
+                <p className="text-sm text-muted-foreground">{t("paymentsHistory")}</p>
               </div>
               <span className="rounded-full bg-secondary/10 px-3 py-1 text-sm font-semibold text-secondary">
-                {expenses.length} entries
+                {expenses.length} {t("entries")}
               </span>
             </div>
 
             <div className="space-y-3">
               {expenses.length === 0 ? (
                 <div className="rounded-lg border border-dashed bg-sidebar/30 p-6 text-center text-sm text-muted-foreground">
-                  Aucune depense reelle ajoutee pour le moment.
+                  {t("noRealExpenses")}
                 </div>
               ) : expenses.map((expense) => (
                 <div key={expense.id} className="flex flex-col gap-3 rounded-lg border bg-white p-4 transition hover:bg-sidebar/30 sm:flex-row sm:items-center sm:justify-between">
@@ -838,7 +840,7 @@ export default function BudgetPage() {
                       <p className="font-semibold text-foreground">{expense.title}</p>
                       <p className="flex items-center gap-2 text-xs text-muted-foreground">
                         <CalendarDays className="size-3.5" />
-                        {expense.date} - {expense.category} - paye par {expense.paidByName}
+                        {expense.date} - {expense.category} - {t("paidByLower")} {expense.paidByName}
                       </p>
                     </div>
                   </div>

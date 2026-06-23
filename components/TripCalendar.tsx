@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
+import { useLanguage } from "@/components/LanguageProvider";
 
 type DashboardTrip = {
   id: string;
@@ -75,6 +76,7 @@ const MONTHS = [
 ];
 
 export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) {
+  const { t } = useLanguage();
   const today = new Date();
   const [viewDate, setViewDate] = useState(new Date(today.getFullYear(), today.getMonth(), 1));
 
@@ -134,31 +136,38 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
   const legendTrips = tripsWithColors.filter((t) => t.startDateObj);
 
   return (
-    <div className="rounded-lg border border-[#ead9bf] bg-white shadow-sm overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#ead9bf]">
+    <div className="overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_18px_45px_rgba(127,42,7,0.1)]">
+      <div className="flex flex-col justify-between gap-4 border-b border-[#ead9bf] bg-[linear-gradient(135deg,#fffaf4,#ffffff)] px-5 py-4 sm:flex-row sm:items-center">
         <div className="flex items-center gap-3">
-          <h2 className="text-lg font-bold text-foreground">
-            {MONTHS[month]} {year}
-          </h2>
+          <span className="flex size-10 items-center justify-center rounded-lg bg-[#9f411d] text-white shadow-sm">
+            <CalendarDays className="size-5" />
+          </span>
+          <div>
+            <h2 className="text-xl font-bold text-foreground">
+              {MONTHS[month]} {year}
+            </h2>
+            <p className="text-xs font-medium text-muted-foreground">
+              {legendTrips.length} {t("scheduledTrips")}
+            </p>
+          </div>
           <button
             onClick={goToday}
-            className="text-xs font-semibold px-3 py-1 rounded-full border border-[#dfb99d] text-[#7f2a07] hover:bg-[#fff3ea] transition"
+            className="rounded-full border border-[#dfb99d] bg-white px-3 py-1 text-xs font-bold text-[#7f2a07] shadow-sm transition hover:border-[#c97950] hover:bg-[#fff3ea]"
           >
-            Today
+            {t("today")}
           </button>
         </div>
         <div className="flex items-center gap-1">
           <button
             onClick={prevMonth}
-            className="p-1.5 rounded-md hover:bg-[#f3e4da] text-[#7f2a07] transition"
+            className="rounded-md border border-[#ead9bf] bg-white p-2 text-[#7f2a07] shadow-sm transition hover:bg-[#f3e4da]"
             aria-label="Previous month"
           >
             <ChevronLeft className="size-4" />
           </button>
           <button
             onClick={nextMonth}
-            className="p-1.5 rounded-md hover:bg-[#f3e4da] text-[#7f2a07] transition"
+            className="rounded-md border border-[#ead9bf] bg-white p-2 text-[#7f2a07] shadow-sm transition hover:bg-[#f3e4da]"
             aria-label="Next month"
           >
             <ChevronRight className="size-4" />
@@ -166,20 +175,18 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
         </div>
       </div>
 
-      {/* Day-of-week headers */}
-      <div className="grid grid-cols-7 border-b border-[#ead9bf]">
+      <div className="grid grid-cols-7 border-b border-[#ead9bf] bg-[#fffaf4]">
         {DAYS_OF_WEEK.map((d) => (
           <div
             key={d}
-            className="py-2 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide"
+            className="py-3 text-center text-[11px] font-bold uppercase tracking-wide text-[#7a5a48]"
           >
             {d}
           </div>
         ))}
       </div>
 
-      {/* Calendar grid */}
-      <div className="grid grid-cols-7" style={{ minHeight: "360px" }}>
+      <div className="grid grid-cols-7 bg-[#ead9bf]" style={{ minHeight: "480px", gap: "1px" }}>
         {cells.map((date, i) => {
           const isToday = date ? isSameDay(date, today) : false;
           const isCurrentMonth = date !== null;
@@ -189,21 +196,20 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
             <div
               key={i}
               className={[
-                "border-r border-b border-[#ead9bf] min-h-[90px] p-1",
-                !isCurrentMonth ? "bg-[#faf7f4]" : "bg-white",
-                i % 7 === 6 ? "border-r-0" : "",
+                "min-h-[104px] p-2 transition",
+                !isCurrentMonth ? "bg-[#f7f0ea]" : "bg-white hover:bg-[#fffaf4]",
               ].join(" ")}
             >
               {date && (
                 <>
                   {/* Day number */}
-                  <div className="flex justify-center mb-1">
+                  <div className="mb-2 flex justify-end">
                     <span
                       className={[
-                        "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full",
+                        "flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold",
                         isToday
                           ? "bg-[#9f411d] text-white"
-                          : "text-foreground",
+                          : "text-[#6f5d53]",
                       ].join(" ")}
                     >
                       {date.getDate()}
@@ -211,7 +217,7 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
                   </div>
 
                   {/* Trip pills */}
-                  <div className="flex flex-col gap-0.5">
+                  <div className="flex flex-col gap-1">
                     {dayTrips.slice(0, 3).map((trip) => {
                       const color = getTripColor(trip.colorIndex);
                       const start = isStartDay(trip, date);
@@ -224,7 +230,7 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
                           onClick={() => onTripClick?.(trip.id)}
                           title={trip.name}
                           className={[
-                            "w-full text-left text-[10px] font-semibold px-1.5 py-0.5 leading-tight truncate transition hover:brightness-95",
+                            "w-full truncate px-2 py-1 text-left text-[11px] font-bold leading-tight shadow-sm transition hover:-translate-y-0.5 hover:brightness-95",
                             color.bg,
                             color.text,
                             // Rounded corners only on start/end, flat edges for spanning days
@@ -261,16 +267,21 @@ export default function TripCalendar({ trips, onTripClick }: TripCalendarProps) 
 
       {/* Legend */}
       {legendTrips.length > 0 && (
-        <div className="px-4 py-3 border-t border-[#ead9bf] flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 border-t border-[#ead9bf] bg-[#fffaf4] px-5 py-4">
           {legendTrips.map((trip) => {
             const color = getTripColor(trip.colorIndex);
             return (
-              <div key={trip.id} className="flex items-center gap-1.5">
+              <button
+                key={trip.id}
+                type="button"
+                onClick={() => onTripClick?.(trip.id)}
+                className="flex items-center gap-2 rounded-full border border-[#ead9bf] bg-white px-3 py-1.5 shadow-sm transition hover:border-[#c97950] hover:bg-[#fff3ea]"
+              >
                 <span className={`size-2.5 rounded-sm ${color.dot}`} />
-                <span className="text-xs text-muted-foreground font-medium">
+                <span className="text-xs font-bold text-[#6f5d53]">
                   {trip.name}
                 </span>
-              </div>
+              </button>
             );
           })}
         </div>

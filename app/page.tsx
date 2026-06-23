@@ -30,6 +30,7 @@ import Link from 'next/link'
 import { FormEvent, useEffect, useRef, useState } from 'react'
 import { toast } from 'sonner'
 import { FaFacebookF, FaInstagram } from 'react-icons/fa'
+import { useLanguage } from '@/components/LanguageProvider'
 
 const EarthScene = dynamic(() => import('@/components/landing/EarthScene'), {
   ssr: false,
@@ -616,10 +617,11 @@ export default function Home() {
 }
 
 function Navbar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const { language, setLanguage } = useLanguage()
   const links = [
-    ['Home', '#home'],
-    ['Features', '#features'],
-    ['How It Works', '#how-it-works'],
+    [language === 'fr' ? 'Accueil' : 'Home', '#home'],
+    [language === 'fr' ? 'Fonctionnalités' : 'Features', '#features'],
+    [language === 'fr' ? 'Comment ça marche' : 'How It Works', '#how-it-works'],
     ['Contact', '#contact'],
   ]
 
@@ -638,11 +640,25 @@ function Navbar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
           ))}
         </div>
         <div className="hidden items-center gap-2 lg:flex">
+          <div className="mr-2 flex rounded-lg border border-white/15 bg-white/10 p-1">
+            {(['en', 'fr'] as const).map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setLanguage(item)}
+                className={`h-8 rounded-md px-2.5 text-xs font-bold transition ${
+                  language === item ? 'bg-white text-[#2E2318]' : 'text-white/75 hover:text-white'
+                }`}
+              >
+                {item.toUpperCase()}
+              </button>
+            ))}
+          </div>
           <Link href="/login" className="rounded-lg px-4 py-2 text-sm font-bold text-white/85 transition hover:bg-white/10">
-            Login
+            {language === 'fr' ? 'Connexion' : 'Login'}
           </Link>
           <Link href="/signup" className="rounded-lg bg-[#C9603A] px-4 py-2 text-sm font-bold text-white transition hover:bg-[#9f411d]">
-            Sign Up
+            {language === 'fr' ? 'Inscription' : 'Sign Up'}
           </Link>
         </div>
         <button type="button" onClick={onToggle} className="flex size-10 items-center justify-center text-white lg:hidden" aria-label="Toggle navigation">
@@ -658,8 +674,16 @@ function Navbar({ open, onToggle }: { open: boolean; onToggle: () => void }) {
               </Link>
             ))}
             <div className="mt-3 grid grid-cols-2 gap-2">
-              <Link href="/login" className="rounded-lg border border-white/25 px-4 py-2.5 text-center text-sm font-bold text-white">Login</Link>
-              <Link href="/signup" className="rounded-lg bg-[#C9603A] px-4 py-2.5 text-center text-sm font-bold text-white">Sign Up</Link>
+              <button
+                type="button"
+                onClick={() => setLanguage(language === 'fr' ? 'en' : 'fr')}
+                className="rounded-lg border border-white/25 px-4 py-2.5 text-center text-sm font-bold text-white"
+              >
+                {language === 'fr' ? 'EN' : 'FR'}
+              </button>
+              <Link href="/signup" className="rounded-lg bg-[#C9603A] px-4 py-2.5 text-center text-sm font-bold text-white">
+                {language === 'fr' ? 'Inscription' : 'Sign Up'}
+              </Link>
             </div>
           </div>
         </div>
