@@ -136,28 +136,28 @@ function TopbarContent() {
   }, []);
 
   return (
-    <header className="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-[#ead9bf] bg-white/90 px-4 shadow-sm backdrop-blur md:px-6">
-      <div className="flex w-full items-center gap-4 md:max-w-xl">
+    <header className="sticky top-0 z-20 flex min-h-16 items-center gap-2 border-b border-[#ead9bf] bg-white/90 px-3 py-3 shadow-sm backdrop-blur sm:justify-between sm:gap-3 md:px-6">
+      <div className="flex min-w-0 flex-1 items-center gap-4 sm:max-w-sm md:max-w-xl">
         <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[#9f411d]" />
+          <Search className="absolute left-2.5 top-1/2 size-3.5 -translate-y-1/2 text-[#9f411d] sm:left-3 sm:size-4" />
           <Input
             placeholder={t("searchDestinations")}
             value={query}
             onChange={(e) => handleSearch(e.target.value)}
-            className="h-10 rounded-lg border-[#ead9bf] bg-[#fff8ec] pl-9 text-sm shadow-none focus-visible:ring-[#c9603a]/30"
+            className="h-8 rounded-lg border-[#ead9bf] bg-[#fff8ec] pl-8 text-[10px] shadow-none focus-visible:ring-[#c9603a]/30 sm:h-10 sm:pl-9 sm:text-sm"
           />
         </div>
       </div>
 
-      <div className="ml-4 flex items-center gap-3">
+      <div className="flex shrink-0 items-center justify-end gap-1.5 sm:ml-4 sm:gap-3">
         <div className="relative">
           <button
             type="button"
             onClick={() => setNotificationsOpen((open) => !open)}
-            className="relative flex size-10 cursor-pointer items-center justify-center rounded-lg border border-[#ead9bf] bg-white text-gray-600 transition hover:bg-sidebar hover:text-[#9f411d]"
+            className="relative flex size-8 cursor-pointer items-center justify-center rounded-lg border border-[#ead9bf] bg-white text-gray-600 transition hover:bg-sidebar hover:text-[#9f411d] sm:size-10"
             aria-label="Notifications"
           >
-            <Bell className="size-5" />
+            <Bell className="size-4 sm:size-5" />
             {notifications.length > 0 && (
               <span className="absolute right-2 top-2 flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold leading-none text-white ring-2 ring-white">
                 {notifications.length}
@@ -166,7 +166,7 @@ function TopbarContent() {
           </button>
 
           {notificationsOpen && (
-            <div className="absolute right-0 top-12 z-50 w-80 rounded-lg border border-[#ead9bf] bg-white p-2 shadow-xl">
+            <div className="fixed left-3 right-3 top-16 z-50 rounded-lg border border-[#ead9bf] bg-white p-2 shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-80">
               <div className="px-2 py-2 text-sm font-bold text-gray-900">
                 {t("notifications")}
               </div>
@@ -237,13 +237,13 @@ function TopbarContent() {
           )}
         </div>
 
-        <div className="flex rounded-lg border border-[#ead9bf] bg-[#fff8ec] p-1 shadow-sm">
+        <div className="flex rounded-lg border border-[#ead9bf] bg-[#fff8ec] p-0.5 shadow-sm sm:p-1">
           {(["en", "fr"] as const).map((item) => (
             <button
               key={item}
               type="button"
               onClick={() => setLanguage(item)}
-              className={`h-8 rounded-md px-2.5 text-xs font-bold transition ${
+              className={`h-7 rounded-md px-1.5 text-[10px] font-bold transition sm:h-8 sm:px-2.5 sm:text-xs ${
                 language === item
                   ? "bg-[#9f411d] text-white shadow-sm"
                   : "text-[#7f2a07] hover:bg-white"
@@ -254,12 +254,12 @@ function TopbarContent() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border border-[#ead9bf] bg-white px-2.5 py-1.5 shadow-sm">
+        <div className="flex min-w-0 items-center gap-2 rounded-full border border-[#ead9bf] bg-white p-0.5 shadow-sm sm:gap-3 sm:rounded-lg sm:px-2.5 sm:py-1.5">
           <div className="hidden text-right sm:block">
             <p className="text-sm font-semibold text-gray-800">{name}</p>
             <p className="text-xs text-muted-foreground">Traveler</p>
           </div>
-          <Avatar className="size-9 ring-2 ring-[#f3e4da]">
+          <Avatar className="size-7 ring-2 ring-[#f3e4da] sm:size-9">
             <AvatarImage src={avatar} />
             <AvatarFallback>{name?.charAt(0).toUpperCase()}</AvatarFallback>
           </Avatar>
