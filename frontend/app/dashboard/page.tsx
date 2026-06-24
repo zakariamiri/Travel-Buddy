@@ -207,19 +207,19 @@ export default function Dashboard() {
     <div className="flex min-h-screen bg-[#fdf9f6]">
       <Sidebar />
 
-      <div className="flex-1 flex flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <Topbar />
 
-        <main className="flex-1 bg-background p-5 md:p-8">
-          <section className="mb-6 rounded-lg border border-[#ead9bf] bg-white p-5 shadow-sm md:p-6">
+        <main className="flex-1 bg-background p-4 pb-28 sm:p-5 sm:pb-28 md:p-8 lg:pb-8">
+          <section className="mb-6 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:p-5 md:p-6">
             <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-              <div>
+              <div className="min-w-0">
                 <div className="mb-3 inline-flex items-center gap-2 rounded-full bg-sidebar px-3 py-1 text-xs font-semibold text-primary">
                   <i className="ri-suitcase-3-line text-sm" />
                   {t("travelBuddyDashboard")}
                 </div>
-                <h1 className="flex items-center gap-3 text-3xl font-bold tracking-normal text-foreground md:text-4xl">
-                  {t("welcome")}, {name}
+                <h1 className="flex flex-wrap items-center gap-2 text-2xl font-bold tracking-normal text-foreground sm:gap-3 md:text-4xl">
+                  <span className="min-w-0 break-words">{t("welcome")}, {name}</span>
                   <img src="/au-revoir.png" alt="wave" className="size-12 md:size-14" />
                 </h1>
                 <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
@@ -228,14 +228,14 @@ export default function Dashboard() {
               </div>
 
               <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                <DialogTrigger className="group flex h-11 w-fit items-center gap-3 rounded-lg border border-[#dfb99d] bg-white px-2.5 pr-4 text-sm font-bold text-[#7f2a07] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#c97950] hover:shadow-[0_8px_20px_rgba(127,42,7,0.14)]">
+                <DialogTrigger className="group flex h-11 w-full items-center justify-center gap-3 rounded-lg border border-[#dfb99d] bg-white px-2.5 pr-4 text-sm font-bold text-[#7f2a07] shadow-sm transition-all hover:-translate-y-0.5 hover:border-[#c97950] hover:shadow-[0_8px_20px_rgba(127,42,7,0.14)] sm:w-fit">
                   <span className="flex size-7 items-center justify-center rounded-md bg-[#9f411d] text-white transition-colors group-hover:bg-[#7f2a07]">
                     <Plus className="size-4" />
                   </span>
                   {t("createTrip")}
                 </DialogTrigger>
 
-                <DialogContent className="rounded-2xl max-w-md">
+                <DialogContent className="max-w-[calc(100vw-2rem)] rounded-2xl sm:max-w-md">
                   <DialogHeader>
                     <DialogTitle className="text-xl font-bold">
                       {t("createNewTrip")}
@@ -311,7 +311,7 @@ export default function Dashboard() {
                       )}
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                       <div>
                         <label className="text-sm font-medium text-gray-700">
                           {t("startDate")}
@@ -453,22 +453,22 @@ export default function Dashboard() {
           <StatsCards />
 
           <section className="mb-6 overflow-hidden rounded-lg border border-[#ead9bf] bg-white shadow-[0_16px_40px_rgba(127,42,7,0.12)]">
-            <div className="flex flex-col items-start justify-between gap-5 bg-[linear-gradient(135deg,#fffaf4_0%,#ffffff_48%,#f5e5dc_100%)] p-5 md:flex-row md:items-center md:p-6">
-              <div className="flex items-center gap-4">
-                <div className="relative flex size-20 shrink-0 items-center justify-center">
+            <div className="flex flex-col items-start justify-between gap-5 bg-[linear-gradient(135deg,#fffaf4_0%,#ffffff_48%,#f5e5dc_100%)] p-4 sm:p-5 md:flex-row md:items-center md:p-6">
+              <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+                <div className="relative flex size-16 shrink-0 items-center justify-center sm:size-20">
                   <span className="absolute inset-0 rounded-full bg-[#d76135]/20 animate-ping" />
                   <span className="absolute inset-2 rounded-full bg-[#f2c8ad]/60 animate-pulse" />
-                  <span className="relative flex size-14 items-center justify-center rounded-full bg-[#9f411d] text-white shadow-[0_12px_28px_rgba(159,65,29,0.32)]">
-                    <Bot className="size-7" />
+                  <span className="relative flex size-12 items-center justify-center rounded-full bg-[#9f411d] text-white shadow-[0_12px_28px_rgba(159,65,29,0.32)] sm:size-14">
+                    <Bot className="size-6 sm:size-7" />
                   </span>
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <div className="mb-2 inline-flex items-center gap-2 rounded-full bg-[#fff1d6] px-3 py-1 text-xs font-bold text-[#8a3412]">
                     <Sparkles className="size-3.5" />
                     {t("assistantBadge")}
                   </div>
-                  <h2 className="text-2xl font-bold text-foreground">
+                  <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                     {t("assistantCtaTitle")}
                   </h2>
                   <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
@@ -481,7 +481,7 @@ export default function Dashboard() {
                 type="button"
                 disabled={!assistantTrip}
                 onClick={() => assistantTrip && router.push(`/dashboard/${assistantTrip.id}/assistant`)}
-                className="group flex h-11 shrink-0 items-center gap-2 rounded-lg bg-[#9f411d] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(159,65,29,0.22)] transition hover:-translate-y-0.5 hover:bg-[#7f3417] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
+                className="group flex h-11 w-full shrink-0 items-center justify-center gap-2 rounded-lg bg-[#9f411d] px-4 text-sm font-bold text-white shadow-[0_10px_24px_rgba(159,65,29,0.22)] transition hover:-translate-y-0.5 hover:bg-[#7f3417] disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto"
               >
                 <MessageCircle className="size-4" />
                 {t("openChatbot")}
@@ -491,17 +491,17 @@ export default function Dashboard() {
 
           {}
           <div className="mb-6 flex flex-col justify-between gap-3 rounded-lg border border-[#ead9bf] bg-white p-4 shadow-sm sm:flex-row sm:items-center">
-            <div>
-              <h2 className="text-2xl font-bold text-foreground">{t("myTrips")}</h2>
+            <div className="min-w-0">
+              <h2 className="text-xl font-bold text-foreground sm:text-2xl">{t("myTrips")}</h2>
               <p className="text-sm text-muted-foreground">{t("tripsSubtitle")}</p>
             </div>
 
-            <div className="flex w-fit gap-1 rounded-lg bg-[#f3e4da] p-1 shadow-inner">
+            <div className="flex w-full gap-1 overflow-x-auto rounded-lg bg-[#f3e4da] p-1 shadow-inner sm:w-fit">
               {["all", "upcoming", "past"].map((f) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
-                  className={`rounded-md px-4 py-2 text-sm font-semibold capitalize transition ${filter === f
+                  className={`flex-1 whitespace-nowrap rounded-md px-3 py-2 text-sm font-semibold capitalize transition sm:flex-none sm:px-4 ${filter === f
                       ? "bg-[#9f411d] text-white shadow"
                       : "text-gray-500 hover:text-[#7F2A07]"
                     }`}

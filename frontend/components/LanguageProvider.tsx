@@ -235,7 +235,7 @@ function subscribeToLanguage(callback: () => void) {
 }
 
 export function LanguageProvider({ children }: { children: React.ReactNode }) {
-  const language = useSyncExternalStore(subscribeToLanguage, readStoredLanguage, () => "en");
+  const language = useSyncExternalStore<Language>(subscribeToLanguage, readStoredLanguage, () => "en");
 
   const setLanguage = (nextLanguage: Language) => {
     window.localStorage.setItem(LANGUAGE_STORAGE_KEY, nextLanguage);

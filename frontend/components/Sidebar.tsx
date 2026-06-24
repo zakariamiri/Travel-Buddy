@@ -69,8 +69,32 @@ export default function Sidebar() {
     router.push("/dashboard");
   };
 
+  const navItems = [
+    {
+      label: t("dashboard"),
+      icon: "ri-home-5-line",
+      onClick: () => router.push("/dashboard"),
+    },
+    {
+      label: t("trips"),
+      icon: "ri-flight-takeoff-line",
+      onClick: () => router.push("/trips"),
+    },
+    {
+      label: t("explore"),
+      icon: "ri-map-2-line",
+      onClick: () => router.push("/explore"),
+    },
+    {
+      label: t("expenses"),
+      icon: "ri-wallet-3-line",
+      onClick: handleExpensesClick,
+    },
+  ];
+
   return (
-    <aside className="w-64 bg-[#FFEFD4] border-r flex flex-col p-4 gap-3 h-screen sticky top-0">
+    <>
+    <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col gap-3 border-r bg-[#FFEFD4] p-4 lg:flex">
       <img src="/logo2.png" alt="Travel Buddy" className="mb-8 mt-4 mr-2" />
       {/* Dashboard */}
       <Button
@@ -150,5 +174,21 @@ export default function Sidebar() {
         </Button>
       </div>
     </aside>
+    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-[#ead9bf] bg-[#FFEFD4]/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-10px_30px_rgba(127,42,7,0.12)] backdrop-blur lg:hidden">
+      <div className="mx-auto grid max-w-md grid-cols-4 gap-1">
+        {navItems.map((item) => (
+          <button
+            key={item.label}
+            type="button"
+            onClick={item.onClick}
+            className="flex min-w-0 flex-col items-center gap-1 rounded-lg px-1.5 py-2 text-xs font-semibold text-gray-800 transition hover:bg-[#9f411d] hover:text-white"
+          >
+            <i className={`${item.icon} text-xl`} />
+            <span className="max-w-full truncate">{item.label}</span>
+          </button>
+        ))}
+      </div>
+    </nav>
+    </>
   );
 }
